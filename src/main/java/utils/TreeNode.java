@@ -1,6 +1,7 @@
 package utils;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class TreeNode implements Comparable<TreeNode> {
@@ -91,6 +92,19 @@ public class TreeNode implements Comparable<TreeNode> {
         int index = this.childrens.indexOf(ochild);
         this.childrens.remove(ochild);
         this.childrens.add(index, nchild);
+    }
+
+    public static String printTreeBF(utils.TreeNode tree) {
+        LinkedList<utils.TreeNode> buffer = new LinkedList<utils.TreeNode>();
+        buffer.add(tree);
+        String output = "";
+        while (!buffer.isEmpty()) {
+            utils.TreeNode node = buffer.pop();
+
+            output+= node.value+",";
+            for (utils.TreeNode child: node.childrens) buffer.add(child);
+        }
+        return (output);
     }
 
     @Override

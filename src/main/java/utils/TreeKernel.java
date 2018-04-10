@@ -91,6 +91,76 @@ public class TreeKernel {
     }
 
     /**
+     * 
+     * @param parentNdoe
+     * @param allSubsets
+     * @param minLength
+     * @return
+     */
+    public static List<utils.TreeNode> SubsetTree(utils.TreeNode parentNdoe,List<utils.TreeNode> allSubsets,int minLength) {
+
+        //Check for the node's children
+        List<utils.TreeNode> children = parentNdoe.getChildrens();
+        if (children.size()>0) {
+            //Process left and right
+            List<utils.TreeNode> leftSubset = SubsetTree(children.get(0),allSubsets,minLength);
+            //System.out.print(leftSubset.get(0).value);
+
+            //Add dummy node
+            utils.TreeNode dummyNode = new utils.TreeNode();
+            //utils.TreeNode pNode = new utils.TreeNode(children.get(0));
+            //leftSubset.add(pNode);
+
+
+            List<utils.TreeNode> rightSubset = new ArrayList<utils.TreeNode>();
+
+
+            if (children.size()>1) {
+                rightSubset = SubsetTree(children.get(1),allSubsets, minLength);
+                //utils.TreeNode pNode2 = new utils.TreeNode(children.get(1));
+                //rightSubset.add(pNode2);
+                //rightSubset.add(new utils.TreeNode());
+            }
+
+            //Main loop
+            List<utils.TreeNode> parentSubsets = new ArrayList<utils.TreeNode>();
+            leftSubset.add(dummyNode);
+            rightSubset.add(new utils.TreeNode());
+
+            for (utils.TreeNode leftNode: leftSubset) {
+                for (utils.TreeNode rightNode: rightSubset) {
+                    //create new left and right nodes
+                    utils.TreeNode root = new utils.TreeNode(parentNdoe);
+                    List<utils.TreeNode> rootChildren = new ArrayList<utils.TreeNode>();
+                    if (leftNode.value!=null) {
+                        //This is not dummy
+                        rootChildren.add(leftNode);
+                    }
+                    if (rightNode.value!=null) rootChildren.add(rightNode);
+                    root.setChildrens(rootChildren);
+                    if (root.childrens.size()>0) {
+                        allSubsets.add(root);
+                    }
+
+                    parentSubsets.add(root);
+                }
+            }
+
+            //System.out.print(parentSubsets+"\n");
+            //System.exit(1);
+            return(parentSubsets);
+
+
+            //Generate subsetTrees based on the generated left/right subsets
+        } else {
+            utils.TreeNode terminal = new utils.TreeNode(parentNdoe);
+            List<utils.TreeNode> terminalList = new ArrayList<utils.TreeNode>();
+            terminalList.add(terminal);
+            return (terminalList);
+        }
+
+    }
+    /**
      * TASK generates all permuations of children for a parent node (the size is given by permutationSize)
      * @param permutations
      * @param localPermutation
@@ -623,6 +693,21 @@ public class TreeKernel {
         //System.exit(1);
 
         //Example:
+
+        String sampleText = "A cat eats a mouse";
+        List<String> constTree = extractConstituencyTree(sampleText);
+        TreeBuilder depTree1 = new TreeBuilder();
+        System.out.print(constTree+"\n");
+        boolean status1 = depTree1.initTreeStringInput(constTree);
+        List<utils.TreeNode> allSubsets = new ArrayList<utils.TreeNode>();
+        List<utils.TreeNode> subsets = SubsetTree(depTree1.root.getChildrens().get(0), allSubsets,1);
+        for (utils.TreeNode node: allSubsets) {
+            System.out.print(utils.TreeNode.printTreeBF(node)+"\n");
+        }
+
+        System.exit(1);
+
+
 
         String text1 = "Deep learning tools have gained tremendous attention in applied machine learning.";
         String text2 = "Deep learning algorithms have received much attention in applied machine learning. ";
