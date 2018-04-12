@@ -91,7 +91,7 @@ public class TreeKernel {
     }
 
     /**
-     * 
+     *
      * @param parentNdoe
      * @param allSubsets
      * @param minLength
@@ -103,48 +103,68 @@ public class TreeKernel {
         List<utils.TreeNode> children = parentNdoe.getChildrens();
         if (children.size()>0) {
             //Process left and right
-            List<utils.TreeNode> leftSubset = SubsetTree(children.get(0),allSubsets,minLength);
-            //System.out.print(leftSubset.get(0).value);
+            List<List<utils.TreeNode>> childrenSubsets = new ArrayList<List<utils.TreeNode>>();
+            List<Integer> childrenSubsetSize = new ArrayList<Integer>();
 
+            for (utils.TreeNode child: children) {
+                List<utils.TreeNode> childSubsets = SubsetTree(child,allSubsets,minLength);
+                //add dummy
+                childSubsets.add(new utils.TreeNode());
+                childrenSubsets.add(childSubsets);
+                childrenSubsetSize.add(childSubsets.size());
+            }
+            //List<utils.TreeNode> leftSubset = SubsetTree(children.get(0),allSubsets,minLength);
             //Add dummy node
-            utils.TreeNode dummyNode = new utils.TreeNode();
-            //utils.TreeNode pNode = new utils.TreeNode(children.get(0));
-            //leftSubset.add(pNode);
-
-
-            List<utils.TreeNode> rightSubset = new ArrayList<utils.TreeNode>();
-
-
-            if (children.size()>1) {
-                rightSubset = SubsetTree(children.get(1),allSubsets, minLength);
-                //utils.TreeNode pNode2 = new utils.TreeNode(children.get(1));
-                //rightSubset.add(pNode2);
-                //rightSubset.add(new utils.TreeNode());
-            }
-
+            //utils.TreeNode dummyNode = new utils.TreeNode();
+            //List<utils.TreeNode> rightSubset = new ArrayList<utils.TreeNode>();
+            //if (children.size()>1) {
+              //  rightSubset = SubsetTree(children.get(1),allSubsets, minLength);
+            //}
             //Main loop
+            //List<utils.TreeNode> parentSubsets = new ArrayList<utils.TreeNode>();
+            //leftSubset.add(dummyNode);
+            //rightSubset.add(new utils.TreeNode());
+
             List<utils.TreeNode> parentSubsets = new ArrayList<utils.TreeNode>();
-            leftSubset.add(dummyNode);
-            rightSubset.add(new utils.TreeNode());
+            //Find all permutations
 
-            for (utils.TreeNode leftNode: leftSubset) {
-                for (utils.TreeNode rightNode: rightSubset) {
-                    //create new left and right nodes
-                    utils.TreeNode root = new utils.TreeNode(parentNdoe);
-                    List<utils.TreeNode> rootChildren = new ArrayList<utils.TreeNode>();
-                    if (leftNode.value!=null) {
-                        //This is not dummy
-                        rootChildren.add(leftNode);
-                    }
-                    if (rightNode.value!=null) rootChildren.add(rightNode);
-                    root.setChildrens(rootChildren);
-                    if (root.childrens.size()>0) {
-                        allSubsets.add(root);
-                    }
-
-                    parentSubsets.add(root);
+            List<List<Integer>> permutations = new ArrayList<List<Integer>>();
+            Operations.treeNodePermutations(childrenSubsetSize,permutations,new ArrayList<Integer>(),0);
+            //Loop over all permutations
+            for (List<Integer> indexes: permutations) {
+                utils.TreeNode root = new utils.TreeNode(parentNdoe);
+                List<utils.TreeNode> rootChildren = new ArrayList<utils.TreeNode>();
+                int counter = 0;
+                for (int index: indexes) {
+                    utils.TreeNode subNode = childrenSubsets.get(counter).get(index);
+                    if (subNode.value!=null) rootChildren.add(subNode);
+                    counter+=1;
                 }
+                root.setChildrens(rootChildren);
+                if (root.childrens.size()>0) {
+                    allSubsets.add(root);
+                }
+                parentSubsets.add(root);
             }
+
+            //for (utils.TreeNode leftNode: leftSubset) {
+              //  for (utils.TreeNode rightNode: rightSubset) {
+                    //create new left and right nodes
+                //    utils.TreeNode root = new utils.TreeNode(parentNdoe);
+                  //  List<utils.TreeNode> rootChildren = new ArrayList<utils.TreeNode>();
+                    //if (leftNode.value!=null) {
+                        //This is not dummy
+                      //  rootChildren.add(leftNode);
+                   // }
+                    //if (rightNode.value!=null) rootChildren.add(rightNode);
+                    //root.setChildrens(rootChildren);
+                    //if (root.childrens.size()>0) {
+                      //  allSubsets.add(root);
+                    //}
+
+                    //parentSubsets.add(root);
+                //}
+            //}
 
             //System.out.print(parentSubsets+"\n");
             //System.exit(1);
@@ -694,8 +714,10 @@ public class TreeKernel {
 
         //Example:
 
-        String sampleText = "A cat eats a mouse";
+        String sampleText = "A cat eats a mouse.";
         List<String> constTree = extractConstituencyTree(sampleText);
+        //constTree = extractDependencyTree(sampleText);
+
         TreeBuilder depTree1 = new TreeBuilder();
         System.out.print(constTree+"\n");
         boolean status1 = depTree1.initTreeStringInput(constTree);
@@ -704,6 +726,8 @@ public class TreeKernel {
         for (utils.TreeNode node: allSubsets) {
             System.out.print(utils.TreeNode.printTreeBF(node)+"\n");
         }
+
+        System.out.print(allSubsets.size());
 
         System.exit(1);
 

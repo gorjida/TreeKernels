@@ -15,6 +15,23 @@ public class Operations {
 
     public static Configuration confObject = Configuration.getInstance();
 
+
+    public static void treeNodePermutations(List<Integer> treeNodeMaxIndexes,List<List<Integer>> permutations
+            ,List<Integer> tempPermutations,int currentIndex) {
+        if (currentIndex>treeNodeMaxIndexes.size()-1) {
+            permutations.add(tempPermutations);
+            return;
+        }
+        int maxIndex = treeNodeMaxIndexes.get(currentIndex);
+        for (int i=0;i<maxIndex;i++) {
+
+            List<Integer> internalPermutation = new ArrayList<Integer>(tempPermutations);
+            internalPermutation.add(i);
+            treeNodePermutations(treeNodeMaxIndexes,permutations,internalPermutation,currentIndex+1);
+        }
+        return;
+    }
+
     public static Set<String> stopWords() throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(confObject.stropWords),"UTF-8"));
         Set<String> stopWordsSet = new HashSet<String>();
@@ -234,6 +251,19 @@ public class Operations {
     }
 
     public static void main(String[] argv) throws Exception{
+
+
+        List<Integer> maxLength = new ArrayList<Integer>();
+        maxLength.add(3);
+        maxLength.add(3);
+        maxLength.add(3);
+
+        List<List<Integer>> permutations = new ArrayList<List<Integer>>();
+
+        treeNodePermutations(maxLength,permutations,new ArrayList<Integer>(),0);
+        System.out.print(permutations.size());
+        System.exit(1);
+
         int[] indexes = new int[5];
         indexes[0] = 0;
         indexes[1] = 1;
