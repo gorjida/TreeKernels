@@ -1,9 +1,17 @@
 package utils;
 
 
+import java.io.IOException;
 import java.util.*;
 
+import edu.stanford.nlp.io.IOUtils;
+import edu.stanford.nlp.ling.IndexedWord;
+import edu.stanford.nlp.pipeline.CoreNLPProtos;
+import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.trees.TypedDependency;
+import edu.stanford.nlp.trees.ud.CoNLLUDocumentReader;
+import edu.stanford.nlp.util.Generics;
+import sun.awt.image.ImageWatched;
 
 public class TreeBuilder {
 
@@ -38,6 +46,54 @@ public class TreeBuilder {
         return (finalSplitted);
     }
 
+
+    public void initTreeFromUD(SemanticGraph graph) throws IOException {
+        this.treemap = new HashMap<Integer, TreeNode>();
+
+        //Define the reader
+        //CoNLLUDocumentReader reader = new CoNLLUDocumentReader();
+        //Iterator<SemanticGraph> it = reader.getIterator(IOUtils.readerFromString(treeBankFilePath));
+        //List<SemanticGraph> graphs = Generics.newArrayList();
+
+        //First, build a root
+        utils.TreeNode node1 = new utils.TreeNode("ROOT", -1);
+        this.root = node1;
+        this.treemap.put(-1,node1);
+
+        //LinkedList<IndexedWord> listOfNodes = new LinkedList<IndexedWord>();
+        //listOfNodes.add(node1);
+
+
+        Collection<IndexedWord> listOfRoots = graph.getRoots();
+
+        LinkedList<IndexedWord> listOfNodes = new LinkedList<IndexedWord>();
+        for (IndexedWord root: listOfRoots){
+
+            utils.TreeNode node2 = new utils.TreeNode(root.value(),root.index());
+            node1.addChild(node2);
+            node2.setParents(node1);
+            listOfNodes.add(root);
+            this.treemap.put(root.index(),node2);
+        }
+
+        while (!listOfNodes.isEmpty()) {
+            IndexedWord currentNode = listOfNodes.pop();
+            node1 = this.treemap.get(currentNode.index());
+            //Iterate over all the children
+            for (IndexedWord child: graph.getChildren(currentNode)) {
+               utils.TreeNode node2 = new utils.TreeNode(child.value(),child.index());
+               node1.addChild(node2);
+               node2.setParents(node1);
+               listOfNodes.add(child);
+               this.treemap.put(child.index(),node2);
+            }
+
+
+
+        }
+
+
+    }
     /**
      * Task this method takes the list-based parsedTree and converts it to a Tree-structure that could be used for the kernel computation
      * @param depens
@@ -46,7 +102,6 @@ public class TreeBuilder {
      */
     public boolean initTreeStringInput(List<String> depens){
         this.treemap = new HashMap<Integer, TreeNode>();
-
         boolean hasRoot = false;
         boolean flag = false;
         for (String t : depens) {
