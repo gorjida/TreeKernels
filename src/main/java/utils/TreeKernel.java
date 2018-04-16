@@ -143,14 +143,14 @@ public class TreeKernel {
                     {
                         rootChildren.add(subNode);
                         if (subNode.getDepth()>=maxDepth) maxDepth = subNode.getDepth();
-
+                        width+= subNode.getWidth();
                     }
-                    width+= subNode.getWidth();
+
                     counter+=1;
                 }
                 root.setChildrens(rootChildren);
                 if (maxDepth>-1) root.setDepth(maxDepth+1);
-                //root.setWidth(width);
+                root.setWidth(Math.max(width,1));
 
                 if (root.childrens.size()>0) {
                     allSubsets.add(root);
