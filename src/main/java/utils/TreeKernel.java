@@ -135,12 +135,23 @@ public class TreeKernel {
                 utils.TreeNode root = new utils.TreeNode(parentNdoe);
                 List<utils.TreeNode> rootChildren = new ArrayList<utils.TreeNode>();
                 int counter = 0;
+                int maxDepth = -1;
+                int width = 0;
                 for (int index: indexes) {
                     utils.TreeNode subNode = childrenSubsets.get(counter).get(index);
-                    if (subNode.value!=null) rootChildren.add(subNode);
+                    if (subNode.value!=null)
+                    {
+                        rootChildren.add(subNode);
+                        if (subNode.getDepth()>=maxDepth) maxDepth = subNode.getDepth();
+
+                    }
+                    width+= subNode.getWidth();
                     counter+=1;
                 }
                 root.setChildrens(rootChildren);
+                if (maxDepth>-1) root.setDepth(maxDepth+1);
+                //root.setWidth(width);
+
                 if (root.childrens.size()>0) {
                     allSubsets.add(root);
                 }
@@ -714,12 +725,13 @@ public class TreeKernel {
 
         //Example:
 
-        String sampleText = "A cat eats a mouse.";
+        String sampleText = "a cat eats a mice.";
         List<String> constTree = extractConstituencyTree(sampleText);
         //constTree = extractDependencyTree(sampleText);
 
         TreeBuilder depTree1 = new TreeBuilder();
         System.out.print(constTree+"\n");
+
         boolean status1 = depTree1.initTreeStringInput(constTree);
         List<utils.TreeNode> allSubsets = new ArrayList<utils.TreeNode>();
         List<utils.TreeNode> subsets = SubsetTree(depTree1.root.getChildrens().get(0), allSubsets,1);

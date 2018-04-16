@@ -11,12 +11,18 @@ public class TreeNode implements Comparable<TreeNode> {
     public List<TreeNode> childrens;
     public TreeNode parents;
     public String relp;
+    public int depth;
+    public int width;
 
     public TreeNode() {
         this.childrens = new ArrayList<TreeNode>();
+        this.depth = 0;
+        this.width = 1;
     }
 
     public TreeNode(TreeNode node) {
+        this.depth = 0;
+        this.width = 1;
         this.value = node.getValue();
         this.hashkey = node.getHashkey();
         this.relp = node.getRelp();
@@ -24,12 +30,16 @@ public class TreeNode implements Comparable<TreeNode> {
     }
 
     public TreeNode(String value, Integer hashkey) {
+        this.depth = 0;
+        this.width = 1;
         this.childrens = new ArrayList<TreeNode>();
         this.value = value;
         this.hashkey = hashkey;
     }
 
     public TreeNode(String value, Integer hashkey, String relp) {
+        this.depth = 0;
+        this.width = 1;
         this.childrens = new ArrayList<TreeNode>();
         this.value = value;
         this.hashkey = hashkey;
@@ -39,6 +49,7 @@ public class TreeNode implements Comparable<TreeNode> {
     public String getRelp() {
         return relp;
     }
+
 
     public void setRelp(String relp) {
         this.relp = relp;
@@ -88,6 +99,12 @@ public class TreeNode implements Comparable<TreeNode> {
         this.childrens.add(i, child);
     }
 
+    public int getDepth() {return this.depth;}
+    public void setDepth(int depth) {this.depth = depth;}
+
+    public int getWidth() {return this.width;}
+    public void setWidth(int width) {this.width = width;}
+
     public void replaceChild(TreeNode ochild, TreeNode nchild) {
         int index = this.childrens.indexOf(ochild);
         this.childrens.remove(ochild);
@@ -104,6 +121,7 @@ public class TreeNode implements Comparable<TreeNode> {
             output+= node.value+",";
             for (utils.TreeNode child: node.childrens) buffer.add(child);
         }
+        output+= tree.getDepth()+","+tree.getWidth();
         return (output);
     }
 
