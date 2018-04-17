@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: it.uniroma2.sag.kelp:kelp-additional-kernels:2.1.0">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/it/uniroma2/sag/kelp/kelp-additional-kernels/2.1.0/kelp-additional-kernels-2.1.0.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/it/uniroma2/sag/kelp/kelp-additional-kernels/2.1.0/kelp-additional-kernels-2.1.0-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/it/uniroma2/sag/kelp/kelp-additional-kernels/2.1.0/kelp-additional-kernels-2.1.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

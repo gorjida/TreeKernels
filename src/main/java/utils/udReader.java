@@ -31,7 +31,7 @@ public class udReader {
             SemanticGraph graph = it.next();
             builder.initTreeFromUD(graph);
             List<utils.TreeNode> allSubsets = new ArrayList<utils.TreeNode>();
-            List<utils.TreeNode> subsets = TreeKernel.SubsetTree(builder.root.getChildrens().get(0), allSubsets,1);
+            List<utils.TreeNode> subsets = TreeKernel.SubsetTree(builder.root.getChildrens().get(0), allSubsets,1,3,1,3);
             System.exit(1);
         }
        //System.out.print(graphs);

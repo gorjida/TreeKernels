@@ -94,10 +94,10 @@ public class TreeKernel {
      *
      * @param parentNdoe
      * @param allSubsets
-     * @param minLength
      * @return
      */
-    public static List<utils.TreeNode> SubsetTree(utils.TreeNode parentNdoe,List<utils.TreeNode> allSubsets,int minLength) {
+    public static List<utils.TreeNode> SubsetTree(utils.TreeNode parentNdoe,List<utils.TreeNode> allSubsets
+            ,int minDepth,int maxDepth,int minWidth,int maxWidth) {
 
         //Check for the node's children
         List<utils.TreeNode> children = parentNdoe.getChildrens();
@@ -107,7 +107,8 @@ public class TreeKernel {
             List<Integer> childrenSubsetSize = new ArrayList<Integer>();
 
             for (utils.TreeNode child: children) {
-                List<utils.TreeNode> childSubsets = SubsetTree(child,allSubsets,minLength);
+                if (child.getWidth()==maxWidth || child.getDepth()==maxDepth) continue;
+                List<utils.TreeNode> childSubsets = SubsetTree(child,allSubsets,minDepth,maxDepth,minWidth,maxWidth);
                 //add dummy
                 childSubsets.add(new utils.TreeNode());
                 childrenSubsets.add(childSubsets);
@@ -135,24 +136,27 @@ public class TreeKernel {
                 utils.TreeNode root = new utils.TreeNode(parentNdoe);
                 List<utils.TreeNode> rootChildren = new ArrayList<utils.TreeNode>();
                 int counter = 0;
-                int maxDepth = -1;
+                int maxDepthTemp = -1;
                 int width = 0;
                 for (int index: indexes) {
                     utils.TreeNode subNode = childrenSubsets.get(counter).get(index);
                     if (subNode.value!=null)
                     {
                         rootChildren.add(subNode);
-                        if (subNode.getDepth()>=maxDepth) maxDepth = subNode.getDepth();
+                        if (subNode.getDepth()>=maxDepthTemp) maxDepthTemp = subNode.getDepth();
                         width+= subNode.getWidth();
                     }
 
                     counter+=1;
                 }
                 root.setChildrens(rootChildren);
-                if (maxDepth>-1) root.setDepth(maxDepth+1);
+                if (maxDepthTemp>-1) root.setDepth(maxDepthTemp+1);
                 root.setWidth(Math.max(width,1));
 
-                if (root.childrens.size()>0) {
+
+
+                if (root.childrens.size()>0 && root.getDepth()>=minDepth
+                        && root.getWidth()>=minWidth && root.getDepth()<=maxDepth && root.getWidth()<=maxWidth) {
                     allSubsets.add(root);
                 }
                 parentSubsets.add(root);
@@ -621,7 +625,7 @@ public class TreeKernel {
         Map<String,Float> CPP1 = new HashMap<String, Float>();
         Map<String,Float> CPP2 = new HashMap<String, Float>();
 
-        //This calculates alld the CPP and CDP values
+        //This calculates all the CPP and CDP values
         Map<String,Map<String,Float>> output =
                 commonDownwardPath(tree1Nodes,tree2Nodes,invTree1Nodes,invTree2Nodes);//CommonDownwardPaths
         long end = System.currentTimeMillis();
@@ -734,7 +738,7 @@ public class TreeKernel {
 
         boolean status1 = depTree1.initTreeStringInput(constTree);
         List<utils.TreeNode> allSubsets = new ArrayList<utils.TreeNode>();
-        List<utils.TreeNode> subsets = SubsetTree(depTree1.root.getChildrens().get(0), allSubsets,1);
+        List<utils.TreeNode> subsets = SubsetTree(depTree1.root.getChildrens().get(0), allSubsets,1,3,1,3);
         for (utils.TreeNode node: allSubsets) {
             System.out.print(utils.TreeNode.printTreeBF(node)+"\n");
         }
