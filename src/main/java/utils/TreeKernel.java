@@ -8,6 +8,7 @@ import conf.Configuration;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 import edu.stanford.nlp.trees.*;
+import edu.stanford.nlp.util.ArrayMap;
 import it.uniroma2.sag.kelp.data.representation.tree.TreeRepresentation;
 import it.uniroma2.sag.kelp.data.representation.tree.node.TreeNode;
 import it.uniroma2.sag.kelp.data.representation.structure.StructureElementFactory;
@@ -49,6 +50,7 @@ public class TreeKernel {
         return node;
     }
 
+    /**
     public static TreeNode cleanDependencyEntry(Collection<TypedDependency> dependencyCollection) throws Exception {
 
         String rootString = "ROOT-0";
@@ -89,6 +91,105 @@ public class TreeKernel {
         return (node);
 
     }
+     **/
+
+
+    /**
+     * TASK: calculate subtreeKernel for given nodes "parentNodeT1" and "parentNodeT2" with "T1" and "T2" being given trees
+     * @param parentNodeT1
+     * @param parentNodeT2
+     * @param minDepth
+     * @param maxDepth
+     * @param minWidth
+     * @param maxWidth
+     * @return
+     */
+    public static List<utils.TreeNode> subsetTreeKernel(utils.TreeNode parentNodeT1,utils.TreeNode parentNodeT2,Map<String,List<utils.TreeNode>> subsetMap,
+                                        int minDepth,int maxDepth,int minWidth,int maxWidth) {
+
+        //For now, we do nothing on this
+        if (parentNodeT1.getValue().compareTo(parentNodeT2.getValue())!=0) {
+            return (new ArrayList<utils.TreeNode>());
+        }
+        //Get list of childeren for the current two parent nodes (in either trees)
+        List<utils.TreeNode> childrenT1 = parentNodeT1.getChildrens();
+        List<utils.TreeNode> childrenT2 = parentNodeT2.getChildrens();
+
+        if (childrenT1.size()==0 || childrenT2.size()==0) {
+            //Return TERMINAL
+            utils.TreeNode terminal = new utils.TreeNode();
+            terminal.setValue( parentNodeT1.getValue());
+            terminal.setDepth(0);
+            terminal.setWidth(1);
+            List<utils.TreeNode> terminalList = new ArrayList<utils.TreeNode>();
+            terminalList.add(terminal);
+            return (terminalList);
+        }
+
+        List<List<utils.TreeNode>> childrenSubsets = new ArrayList<List<utils.TreeNode>>();
+        List<Integer> childrenSubsetSize = new ArrayList<Integer>();
+        for (utils.TreeNode childT1: childrenT1) {
+            for (utils.TreeNode childT2: childrenT2) {
+                //Evaluate similarity between children
+                //List<Integer> childrenSubsetSize = new ArrayList<Integer>();
+                if (childT1.getValue().compareTo(childT2.getValue())==0) {
+                    //Similar Children
+                    if (childT1.getWidth()==maxWidth || childT1.getDepth()==maxDepth) continue;
+
+                    List<utils.TreeNode> childSubsets = subsetTreeKernel(childT1,childT2,subsetMap,minDepth,maxDepth,minWidth,maxWidth);
+                    childSubsets.add(new utils.TreeNode());
+                    childrenSubsets.add(childSubsets);
+                    childrenSubsetSize.add(childSubsets.size());
+                }
+            }
+        }
+
+        List<List<Integer>> permutations = new ArrayList<List<Integer>>();
+        Operations.treeNodePermutations(childrenSubsetSize,permutations,new ArrayList<Integer>(),0);
+
+        List<utils.TreeNode> parentSubsets = new ArrayList<utils.TreeNode>();
+        //Loop over all permutations
+        List<utils.TreeNode> listOfTreeNodes = new ArrayList<utils.TreeNode>();
+
+        for (List<Integer> indexes: permutations) {
+            utils.TreeNode rootT1 = new utils.TreeNode(parentNodeT1);
+
+            List<utils.TreeNode> rootChildren = new ArrayList<utils.TreeNode>();
+            int counter = 0;
+            int maxDepthTemp = -1;
+            int width = 0;
+            for (int index: indexes) {
+                utils.TreeNode subNode = childrenSubsets.get(counter).get(index);
+                if (subNode.value!=null)
+                {
+                    rootChildren.add(subNode);
+                    if (subNode.getDepth()>=maxDepthTemp) maxDepthTemp = subNode.getDepth();
+                    width+= subNode.getWidth();
+                }
+
+                counter+=1;
+            }
+
+
+
+            rootT1.setChildrens(rootChildren);
+            if (maxDepthTemp>-1) rootT1.setDepth(maxDepthTemp+1);
+            rootT1.setWidth(Math.max(width,1));
+            if (rootT1.childrens.size()>0 && rootT1.getDepth()>=minDepth
+                    && rootT1.getWidth()>=minWidth && rootT1.getDepth()<=maxDepth && rootT1.getWidth()<=maxWidth) {
+                listOfTreeNodes.add(rootT1);
+            }
+            parentSubsets.add(rootT1);
+        }
+
+        //System.out.print("*******\n");
+        //for (utils.TreeNode n: parentSubsets) {
+         //   System.out.print(n.getValue()+"\n");
+        //}
+        String key = parentNodeT1.hashkey+"|"+parentNodeT2.hashkey;
+        subsetMap.put(key,listOfTreeNodes);
+        return (parentSubsets);
+    }
 
     /**
      *
@@ -114,17 +215,6 @@ public class TreeKernel {
                 childrenSubsets.add(childSubsets);
                 childrenSubsetSize.add(childSubsets.size());
             }
-            //List<utils.TreeNode> leftSubset = SubsetTree(children.get(0),allSubsets,minLength);
-            //Add dummy node
-            //utils.TreeNode dummyNode = new utils.TreeNode();
-            //List<utils.TreeNode> rightSubset = new ArrayList<utils.TreeNode>();
-            //if (children.size()>1) {
-              //  rightSubset = SubsetTree(children.get(1),allSubsets, minLength);
-            //}
-            //Main loop
-            //List<utils.TreeNode> parentSubsets = new ArrayList<utils.TreeNode>();
-            //leftSubset.add(dummyNode);
-            //rightSubset.add(new utils.TreeNode());
 
             List<utils.TreeNode> parentSubsets = new ArrayList<utils.TreeNode>();
             //Find all permutations
@@ -152,8 +242,6 @@ public class TreeKernel {
                 root.setChildrens(rootChildren);
                 if (maxDepthTemp>-1) root.setDepth(maxDepthTemp+1);
                 root.setWidth(Math.max(width,1));
-
-
 
                 if (root.childrens.size()>0 && root.getDepth()>=minDepth
                         && root.getWidth()>=minWidth && root.getDepth()<=maxDepth && root.getWidth()<=maxWidth) {
@@ -223,9 +311,10 @@ public class TreeKernel {
     }
 
 
-    public static void commonPeakPathOptimized(utils.TreeNode tree1Child,utils.TreeNode tree2Child
+    public static void commonPeakPathOptimized(String postFix,utils.TreeNode tree1Child,utils.TreeNode tree2Child
             ,Map<String,Float> CDPMap,String childKey,Map<String,Float> CPPMap,
                                                Map<utils.TreeNode,Integer> invDependency1,Map<utils.TreeNode,Integer> invDependency2) {
+
         List<utils.TreeNode> chil1ChildrenList = tree1Child.getChildrens();
         List<utils.TreeNode> chil2ChildrenList = tree2Child.getChildrens();
         float tempCPP = CDPMap.get(childKey);//Initial CPP
@@ -246,7 +335,7 @@ public class TreeKernel {
             for (List<utils.TreeNode> tree1Permute : tree1Permuations) {
                 for (List<utils.TreeNode> tree2Permute : tree2Permuations) {
                     //we need to compare these two permutations
-                    tempCPP += calculateCPPContribution(CDPMap, tree1Permute, tree2Permute,
+                    tempCPP += calculateCPPContribution(postFix,CDPMap, tree1Permute, tree2Permute,
                             invDependency1, invDependency2);//This is the final CPP
                 }
             }
@@ -263,21 +352,34 @@ public class TreeKernel {
      * @param invDependency2
      * @return
      */
-    public static float commonDownardPathRecursionOptimized(float degree,float CDP,utils.TreeNode tree1Node,
+    public static float commonDownardPathRecursionOptimized(float degree,float CDP,float subsetIndex,utils.TreeNode tree1Node,
                                                             utils.TreeNode tree2Node,
                                                             Map<utils.TreeNode, Integer> invDependency1,
                                                             Map<utils.TreeNode, Integer> invDependency2
             ,Map<String,Float> CDPMap,Map<String,Float> CPPMap) {
 
+        String postFix = "";
+        if (subsetIndex>-1) postFix = "|"+subsetIndex;
         if (tree1Node.getValue().compareTo(tree2Node.getValue())!=0) {
-            CDPMap.put(invDependency1.get(tree1Node)+"|"+invDependency2.get(tree2Node),0f);//No commonpath
-            CPPMap.put(invDependency1.get(tree1Node)+"|"+invDependency2.get(tree2Node),0f);
+            //CDPMap.put(invDependency1.get(tree1Node)+"|"+invDependency2.get(tree2Node),0f);//No commonpath
+            //CPPMap.put(invDependency1.get(tree1Node)+"|"+invDependency2.get(tree2Node),0f);
+
+            //ADDED BY ALI
+            CDPMap.put(tree1Node.hashkey+"|"+tree2Node.hashkey+postFix,0f);//No commonpath
+            CPPMap.put(tree1Node.hashkey+"|"+tree2Node.hashkey+postFix,0f);
+            //END OF ADDED BY ALI
+
+
             return (CDP);//The current CDP is zero
         } else {
             //Get list of children
             CDP= confObject.dependencyTreeHyperParameter*(CDP+1);//Add CDP by 1, because this is one common node
             //temporary put this one in CDPMap
             String parentKey = invDependency1.get(tree1Node)+"|"+invDependency2.get(tree2Node);
+            //ADDED BY ALI
+            parentKey = tree1Node.hashkey+"|"+tree2Node.hashkey+postFix;
+            //END OF ADDED BY ALI
+
             CDPMap.put(parentKey,CDP);
             degree+=1;
             List<utils.TreeNode> tree1Children = tree1Node.getChildrens();//List of children
@@ -286,13 +388,16 @@ public class TreeKernel {
             for (utils.TreeNode tree1Child: tree1Children) {
                 for (utils.TreeNode tree2Child : tree2Children) {
                     String childKey = invDependency1.get(tree1Child) + "|" + invDependency2.get(tree2Child);
+                    //ADDED BY ALI
+                    childKey = tree1Child.hashkey+"|"+tree2Child.hashkey+postFix;
+                    //END OF ADDED BY ALI
 
-                    float newOutput = commonDownardPathRecursionOptimized(0, 0, tree1Child,
+                    float newOutput = commonDownardPathRecursionOptimized(0, 0,subsetIndex, tree1Child,
                             tree2Child, invDependency1,
                             invDependency2, CDPMap, CPPMap);//Compute CDP fpr this combination
 
                     //if (childKey.compareTo("3|3")==0) System.out.print(CDPMap+"\n");
-                    commonPeakPathOptimized(tree1Child,tree2Child,CDPMap,childKey,CPPMap,invDependency1,invDependency2);
+                    commonPeakPathOptimized(postFix,tree1Child,tree2Child,CDPMap,childKey,CPPMap,invDependency1,invDependency2);
                     //update parent
                     float parentCDP = CDPMap.get(parentKey);
                     if (CDPMap.containsKey(childKey)) {
@@ -306,7 +411,6 @@ public class TreeKernel {
                 }
             }
         }
-
         return (CDP);
     }
 
@@ -343,6 +447,30 @@ public class TreeKernel {
         return(CDP);
     }
 
+
+
+    public static Map<String,Map<String,Float>> commonDownwardPathSubsetTree(List<utils.TreeNode> subset1,List<utils.TreeNode> subset2) {
+
+        Map<String,Map<String,Float>> commonPath = new HashMap<String, Map<String, Float>>();
+
+        Map<String,Float> CDP = new HashMap<String, Float>();
+        Map<String,Float> CPP = new HashMap<String, Float>();
+
+        int subsetIndex = 0;
+        for (utils.TreeNode node1: subset1) {
+            for (utils.TreeNode node2: subset2) {
+
+                commonDownardPathRecursionOptimized(0,0,subsetIndex,node1,node2,new HashMap<utils.TreeNode, Integer>(),new HashMap<utils.TreeNode, Integer>(),CDP,CPP);
+                subsetIndex+=1;
+            }
+        }
+
+        commonPath.put("CDP",CDP);
+        commonPath.put("CPP",CPP);
+        return (commonPath);
+    }
+
+
     /**
      * TASK: calculates both CDP and CPP for the given trees
      * @param dependency1
@@ -359,25 +487,22 @@ public class TreeKernel {
         Map<String,Map<String,Float>> output = new HashMap<String, Map<String, Float>>();
         Map<String,Float> CDP = new HashMap<String, Float>();
         Map<String,Float> CPP = new HashMap<String, Float>();
-
         //System.out.print("Time1:"+(end-init)+"\n");
         //System.out.print((end-init)+"\n");
         long init = System.currentTimeMillis();
-
-        //SUBTREE kernel
+        //Kernel calculation
         for (Map.Entry<Integer,utils.TreeNode> entry1: dependency1.entrySet()) {
             for (Map.Entry<Integer,utils.TreeNode> entry2: dependency2.entrySet()) {
                 //Calculate commmonDownwardPath for this combination
                 if ((entry1.getKey()<0) || (entry2.getKey()<0)) continue;//For now, we skip ROOT
                 if (!CDP.containsKey(entry1.getKey()+"|"+entry2.getKey())) {
                     //This recursive function takes nodes and calculates CPP and CDP
-                    float result = commonDownardPathRecursionOptimized(0,0,entry1.getValue(),entry2.getValue(),invDependency1,invDependency2,CDP,CPP);
+                    float result = commonDownardPathRecursionOptimized(0,0,-1,entry1.getValue(),entry2.getValue(),invDependency1,invDependency2,CDP,CPP);
                 }
 
             }
         }
         //Fill out those not-generated CPPS
-
         for (String key: CDP.keySet()) {
             if (!CPP.containsKey(key)) {
                 String[] splitted = key.split("\\|");
@@ -385,7 +510,7 @@ public class TreeKernel {
                 int node2 = Integer.parseInt(splitted[1]);
                 String childKey = node1+"|"+node2;
                 //Calculate CPP here
-                commonPeakPathOptimized(dependency1.get(node1),dependency2.get(node2),CDP,childKey
+                commonPeakPathOptimized("",dependency1.get(node1),dependency2.get(node2),CDP,childKey
                         ,CPP,invDependency1,invDependency2);
             }
         }
@@ -407,7 +532,7 @@ public class TreeKernel {
      * @param invDependency2
      * @return
      */
-    public static float calculateCPPContribution(Map<String,Float> CDP,
+    public static float calculateCPPContribution(String postFix,Map<String,Float> CDP,
                                                  List<utils.TreeNode> tree1Children,
                                                  List<utils.TreeNode> tree2Children,
                                                  Map<utils.TreeNode, Integer> invDependency1,
@@ -419,9 +544,13 @@ public class TreeKernel {
             for (utils.TreeNode node2: tree2Children) {
                 if (node1.getValue().compareTo(node2.getValue())==0) {
                     //There is a common child between these two trees (c1.w=c2.w)
-                    int index1 = invDependency1.get(node1);
-                    int index2 = invDependency2.get(node2);
-                    pairedIndexes.add(index1+"|"+index2);
+                    //int index1 = invDependency1.get(node1);
+                    //int index2 = invDependency2.get(node2);
+                    //ADDED BY ALI
+                    int index1 = node1.hashkey;
+                    int index2 = node2.hashkey;
+                    //ADDED BY ALI
+                    pairedIndexes.add(index1+"|"+index2+postFix);
                     break;
                 }
             }
@@ -490,7 +619,7 @@ public class TreeKernel {
                     for (List<utils.TreeNode> tree1Permute: tree1Permuations) {
                         for (List<utils.TreeNode> tree2Permute: tree2Permuations) {
                             //we need to compare these two permutations
-                            tempCPP+= calculateCPPContribution(CDP,tree1Permute,tree2Permute,invDependency1,invDependency2);//This is the final CPP
+                            tempCPP+= calculateCPPContribution("",CDP,tree1Permute,tree2Permute,invDependency1,invDependency2);//This is the final CPP
                         }
                     }
                 }
@@ -585,14 +714,97 @@ public class TreeKernel {
         return (outputList);
     }
 
-    /**
-     * TASK Similarity based on subtree kernel
-     * @param dependencyListTree1 List-based tree representation for the first sentence tree (supports Constituency and Dependency Trees)
-     * @param dependencyListTree2 List-based tree representation for the second sentence tree (supports Constituency and Dependency Trees)
-     * @return KernelSimilarity s
-     */
-    public static double calculateKernelSimilarity(List<String> dependencyListTree1,List<String> dependencyListTree2) {
 
+    /**
+     *
+     * @param text1
+     * @param text2
+     * @param minDepth
+     * @param maxDepth
+     * @param minWidth
+     * @param maxWidth
+     * @param type
+     * @return
+     * @throws Exception
+     */
+    public static double calculateSubsetKernelSimilarity(String text1,String text2,int minDepth,
+                                                       int maxDepth,int minWidth,int maxWidth,Enums.Type type) throws Exception{
+
+
+        List<String> dependencyListTree1 = new ArrayList<String>();
+        List<String> dependencyListTree2 = new ArrayList<String>();
+
+        if (type==Enums.Type.CONSTITUENCY) {
+            dependencyListTree1 = extractConstituencyTree(text1);
+            dependencyListTree2 = extractConstituencyTree(text2);
+        } else if (type == Enums.Type.StanfordDependency) {
+            dependencyListTree1 = extractDependencyTree(text1);
+            dependencyListTree2 = extractDependencyTree(text2);
+        }
+
+        long init = System.currentTimeMillis();
+
+        //TreeBuilder Class: this takes list-based parsed-tree and creates a TreeObject (that can be used for subtree creation as well)
+        TreeBuilder depTree1 = new TreeBuilder();
+        TreeBuilder depTree2 = new TreeBuilder();
+        boolean status1 = depTree1.initTreeStringInput(dependencyListTree1);
+        boolean status2 = depTree2.initTreeStringInput(dependencyListTree2);
+        if (!status1 || !status2) return (-1);
+        //Map of nodes within the tree
+        Map<Integer, utils.TreeNode> tree1Nodes = depTree1.treemap;
+        Map<Integer, utils.TreeNode> tree2Nodes = depTree2.treemap;
+        //Create Inverse tree-node
+        Map<utils.TreeNode, Integer> invTree1Nodes = new HashMap<utils.TreeNode, Integer>();
+        Map<utils.TreeNode, Integer> invTree2Nodes = new HashMap<utils.TreeNode, Integer>();
+        for (Map.Entry<Integer, utils.TreeNode> entry: tree1Nodes.entrySet()) {
+            invTree1Nodes.put(entry.getValue(),entry.getKey());
+        }
+        for (Map.Entry<Integer, utils.TreeNode> entry: tree2Nodes.entrySet()) {
+            invTree2Nodes.put(entry.getValue(),entry.getKey());
+        }
+
+        //Loop over all the intra-nodes
+        Map<String,List<utils.TreeNode>> mapOfIntraSubsets = new HashMap<String, List<utils.TreeNode>>();
+        for (Map.Entry<Integer,utils.TreeNode> entry1: tree1Nodes.entrySet()) {
+            for (Map.Entry<Integer,utils.TreeNode> entry2: tree2Nodes.entrySet()) {
+                //Calculate commmonDownwardPath for this combination
+                if ((entry1.getKey()<0) || (entry2.getKey()<0)) continue;//For now, we skip ROOT
+                if (!mapOfIntraSubsets.containsKey(entry1.getKey()+"|"+entry2.getKey())) {
+                    //This recursive function takes nodes and calculates CPP and CDP
+                    subsetTreeKernel(entry1.getValue(),entry2.getValue(),mapOfIntraSubsets,minDepth,maxDepth,minWidth,maxDepth);
+                }
+            }
+        }
+
+        double totalNumSubsets= 0 ;
+        for (Map.Entry<String,List<utils.TreeNode>> entry: mapOfIntraSubsets.entrySet()) {
+            totalNumSubsets+= entry.getValue().size();
+        }
+        return (totalNumSubsets);
+
+    }
+
+
+    /**
+     *
+     * @param text1
+     * @param text2
+     * @param type
+     * @return
+     * @throws Exception
+     */
+    public static double calculateKernelSimilarity(String text1,String text2,Enums.Type type) throws Exception {
+
+        List<String> dependencyListTree1 = new ArrayList<String>();
+        List<String> dependencyListTree2 = new ArrayList<String>();
+
+        if (type==Enums.Type.CONSTITUENCY) {
+            dependencyListTree1 = extractConstituencyTree(text1);
+            dependencyListTree2 = extractConstituencyTree(text2);
+        } else if (type == Enums.Type.StanfordDependency) {
+            dependencyListTree1 = extractDependencyTree(text1);
+            dependencyListTree2 = extractDependencyTree(text2);
+        }
 
         long init = System.currentTimeMillis();
 
@@ -628,6 +840,8 @@ public class TreeKernel {
         //This calculates all the CPP and CDP values
         Map<String,Map<String,Float>> output =
                 commonDownwardPath(tree1Nodes,tree2Nodes,invTree1Nodes,invTree2Nodes);//CommonDownwardPaths
+
+        System.out.print(output.get("CPP")+"\n");
         long end = System.currentTimeMillis();
 
         intraCPP = output.get("CPP");
@@ -645,6 +859,7 @@ public class TreeKernel {
     }
 
 
+    /**
     public double stringKernel(List<String> dependencyListTree1) {
         long init = System.currentTimeMillis();
         TreeBuilder depTree1 = new TreeBuilder();
@@ -666,12 +881,16 @@ public class TreeKernel {
         return (calcKernel(CPP1));
 
     }
+     **/
+
     /**
      * TASK calculates similatiry based on the subtree-kernal
      * @param dependencyListTree1 List-based tree representation for the first constituency tree
      * @param dependencyListTree2 List-based tree representation for the second constituency tree
      * @return
      */
+
+    /**
     public double calculateKernelSimilarityWithQueryKernel(List<String> dependencyListTree1,List<String> dependencyListTree2,float selfQueryNorm,float selfAnswerNorm) {
 
         //STEP1: convert to TreeNode object
@@ -717,6 +936,7 @@ public class TreeKernel {
         //System.out.print((end-init)+"\n");
         return (similarity);
     }
+    **/
 
     public static void main(String[] argv) throws Exception {
 
@@ -729,36 +949,45 @@ public class TreeKernel {
 
         //Example:
 
-        String sampleText = "a cat eats a mice.";
+        Enums.Type type = Enums.Type.StanfordDependency;
+
+        String sampleText = "Deep learning tools have gained tremendous attention in applied machine learning.";
+        String sampleText2 = "Deep learning algorithms have received much attention in applied machine learning.";
+
         List<String> constTree = extractConstituencyTree(sampleText);
+        List<String> constTree2 = extractConstituencyTree(sampleText2);
+
+        System.out.print(constTree+"\n");
+        System.out.print(constTree2+"\n");
+
         //constTree = extractDependencyTree(sampleText);
 
+        //double similarity = calculateKernelSimilarity(constTree,constTree2);
+        //System.exit(1);
+
         TreeBuilder depTree1 = new TreeBuilder();
-        System.out.print(constTree+"\n");
+        TreeBuilder depTree2 = new TreeBuilder();
+
+
+
 
         boolean status1 = depTree1.initTreeStringInput(constTree);
+        boolean status2 = depTree2.initTreeStringInput(constTree2);
+
         List<utils.TreeNode> allSubsets = new ArrayList<utils.TreeNode>();
-        List<utils.TreeNode> subsets = SubsetTree(depTree1.root.getChildrens().get(0), allSubsets,1,3,1,3);
-        for (utils.TreeNode node: allSubsets) {
-            System.out.print(utils.TreeNode.printTreeBF(node)+"\n");
-        }
-
-        System.out.print(allSubsets.size());
-
-        System.exit(1);
+        Map<String,List<utils.TreeNode>> subsetMap = new HashMap<String, List<utils.TreeNode>>();
 
 
 
-        String text1 = "Deep learning tools have gained tremendous attention in applied machine learning.";
-        String text2 = "Deep learning algorithms have received much attention in applied machine learning. ";
-        List<String> depTreeText1 = extractDependencyTree(text1);
-        List<String> depTreeText2 = extractDependencyTree(text2);
-        List<String> constTreeText1 = extractConstituencyTree(text1);
-        List<String> constTreeText2 = extractConstituencyTree(text2);
-        double constBasedSim = calculateKernelSimilarity(constTreeText1,constTreeText2);
-        double depBasedSim = calculateKernelSimilarity(depTreeText1,depTreeText2);
-        System.out.print("ConstituencyTree Similarity:"+constBasedSim+"\n");
-        System.out.print("DependencyTree Similarity:"+depBasedSim+"\n");
+        subsetTreeKernel(depTree1.root.getChildrens().get(0),depTree2.root.getChildrens().get(0),subsetMap,-1,1000,-1,1000);
+        //System.out.print(depTree1.root.getChildrens().get(0).getValue().compareTo(depTree2.root.getChildrens().get(0).getValue())+"\n");
+       // System.out.print(depTree1.root.getChildrens().get(0).getHashkey()+"\n");
+        double intraComm = calculateSubsetKernelSimilarity(sampleText,sampleText2,-1,3,-1,3,type);
+        double selfComm1 = calculateSubsetKernelSimilarity(sampleText,sampleText,-1,3,-1,3,type);
+        double selfComm2 = calculateSubsetKernelSimilarity(sampleText2,sampleText2,-1,3,-1,3,type);
+        double similarity = ((double) intraComm)/Math.sqrt((double) (selfComm1*selfComm2));
+        System.out.print(similarity+"\n");
+        System.out.print(calculateKernelSimilarity(sampleText,sampleText2,type));
 
         /**
          TreebankLanguagePack tlp = new PennTreebankLanguagePack();

@@ -97,7 +97,7 @@ public class Configuration {
     public String jsonEmbedding = "embeddingWordVec";
     public String jsonTopic = "topicUnsupervised";
 
-    public float dependencyTreeHyperParameter = .9f;
+    public float dependencyTreeHyperParameter = 1f;
 
     public int internalThreads = 3;
 

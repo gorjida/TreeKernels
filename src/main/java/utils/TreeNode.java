@@ -121,7 +121,7 @@ public class TreeNode implements Comparable<TreeNode> {
             output+= node.value+",";
             for (utils.TreeNode child: node.childrens) buffer.add(child);
         }
-        output+= tree.getDepth()+","+tree.getWidth();
+        output+=tree.hashkey+","+tree.getDepth()+","+tree.getWidth();
         return (output);
     }
 

@@ -253,15 +253,16 @@ public class Operations {
     public static void main(String[] argv) throws Exception{
 
 
+
         List<Integer> maxLength = new ArrayList<Integer>();
-        maxLength.add(3);
-        maxLength.add(3);
-        maxLength.add(3);
+        maxLength.add(2);
+        //maxLength.add(2);
+        //maxLength.add(2);
 
         List<List<Integer>> permutations = new ArrayList<List<Integer>>();
 
         treeNodePermutations(maxLength,permutations,new ArrayList<Integer>(),0);
-        System.out.print(permutations.size());
+        System.out.print("\n"+permutations);
         System.exit(1);
 
         int[] indexes = new int[5];
