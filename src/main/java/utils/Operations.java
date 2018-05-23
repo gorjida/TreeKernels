@@ -250,12 +250,39 @@ public class Operations {
         return (listOfWeights);
     }
 
+    public static double calculateNodeSimilarity(utils.TreeNode leftNode,utils.TreeNode rightNode,Enums.VectorizationType vectorizationType)
+    {
+        if (vectorizationType==Enums.VectorizationType.WordIdentity) {
+            if (leftNode.getValue().compareTo(rightNode.getValue())==0) {
+                return (1);
+            } else {
+                return (0);
+            }
+        } else if (vectorizationType==Enums.VectorizationType.StandardStanford) {
+            Vector<Integer> leftRepresentation = leftNode.getVector();
+            Vector<Integer> rightRepresentation = rightNode.getVector();
+            //Calculate similarity
+            return (0);
+        } else
+        {
+            return (0);
+        }
+    }
+
+
+
     public static void main(String[] argv) throws Exception{
 
 
 
         List<Integer> maxLength = new ArrayList<Integer>();
-        maxLength.add(2);
+        maxLength.add(3);
+        maxLength.add(3);
+        //maxLength.add(2);
+        //maxLength.add(2);
+        //maxLength.add(2);
+        //maxLength.add(2);
+        //maxLength.add(2);
         //maxLength.add(2);
         //maxLength.add(2);
 

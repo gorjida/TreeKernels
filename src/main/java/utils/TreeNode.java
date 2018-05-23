@@ -3,6 +3,9 @@ package utils;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Vector;
+import java.util.Set;
+import java.util.HashSet;
 
 public class TreeNode implements Comparable<TreeNode> {
 
@@ -11,8 +14,15 @@ public class TreeNode implements Comparable<TreeNode> {
     public List<TreeNode> childrens;
     public TreeNode parents;
     public String relp;
+    public List<String> grammaticalRelations;
+    public String tag;
     public int depth;
     public int width;
+    public Vector<Integer> vector;
+    //A few more data-points
+    //Embedding vector
+    //StanfordStandardBased tag representation
+    //UDDBased tag representation
 
     public TreeNode() {
         this.childrens = new ArrayList<TreeNode>();
@@ -46,10 +56,30 @@ public class TreeNode implements Comparable<TreeNode> {
         this.relp = relp;
     }
 
+    public TreeNode(String value,String tag, List<String> grammaticalRelations, Integer index,Enums.VectorizationType vectorizationType) {
+        this.depth = 0;
+        this.width = 1;
+        this.childrens = new ArrayList<TreeNode>();
+        this.value = value;
+        this.tag = tag;
+        this.grammaticalRelations = grammaticalRelations;
+        this.hashkey = index;
+
+        this.vector = createVectorRepresentation(this.tag,this.grammaticalRelations,vectorizationType);
+
+
+
+    }
+
     public String getRelp() {
         return relp;
     }
 
+    public String getTag() {return this.tag;}
+
+    public List<String> getGrammaticalRelations() {return this.grammaticalRelations;}
+
+    public Vector<Integer> getVector() {return this.vector;}
 
     public void setRelp(String relp) {
         this.relp = relp;
@@ -104,6 +134,48 @@ public class TreeNode implements Comparable<TreeNode> {
 
     public int getWidth() {return this.width;}
     public void setWidth(int width) {this.width = width;}
+
+    /**
+     *
+     * @param posTag
+     * @return
+     */
+    public static Vector<Integer> createVectorRepresentation(String posTag,List<String> relationTag,Enums.VectorizationType vectorizationType)
+    {
+
+        Vector<Integer> vectorRepresentation = new Vector<Integer>();
+
+        //new int[Enums.PartOfSpeech.getNumPosTags()+Enums.StanfordDependencyRelations.getNumRelationTags()];
+        if (vectorizationType==Enums.VectorizationType.StandardStanford)
+        {
+            int posTagIndex = Enums.PartOfSpeech.getPOSIndex(posTag);
+
+            int bias = Enums.PartOfSpeech.getNumPosTags();
+            Set<Integer> relationTagIndices = new HashSet<Integer>();
+            for (String relation: relationTag) {
+                int relationTagIndex = Enums.StanfordDependencyRelations.getRelationIndex(relation);
+                relationTagIndices.add(bias+relationTagIndex);
+            }
+            for (int index=0;index<Enums.PartOfSpeech.getNumPosTags()+Enums.StanfordDependencyRelations.getNumRelationTags();index+=1)
+            {
+                if (index==posTagIndex || relationTagIndices.contains(index))
+                {
+                    vectorRepresentation.add(1);
+                } else {
+                    vectorRepresentation.add(0);
+                }
+            }
+        } else if (vectorizationType==Enums.VectorizationType.UDV1)
+        {
+            //Add vector initiation by UDV
+        } else if (vectorizationType==Enums.VectorizationType.WordIdentity)
+        {
+            //Add vector initiation by wordIdentity
+        }
+
+        return (vectorRepresentation);
+    }
+
 
     public void replaceChild(TreeNode ochild, TreeNode nchild) {
         int index = this.childrens.indexOf(ochild);

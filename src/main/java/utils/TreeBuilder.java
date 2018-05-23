@@ -3,11 +3,14 @@ package utils;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import edu.stanford.nlp.io.IOUtils;
 import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.pipeline.CoreNLPProtos;
 import edu.stanford.nlp.semgraph.SemanticGraph;
+import edu.stanford.nlp.trees.GrammaticalRelation;
+import edu.stanford.nlp.trees.GrammaticalStructure;
 import edu.stanford.nlp.trees.TypedDependency;
 import edu.stanford.nlp.trees.ud.CoNLLUDocumentReader;
 import edu.stanford.nlp.util.Generics;
@@ -22,6 +25,7 @@ public class TreeBuilder {
         super();
         this.treemap = new HashMap<Integer, TreeNode>();
     }
+
 
     public static String[] customSplit(String input,String delimitter) {
 
@@ -47,7 +51,12 @@ public class TreeBuilder {
     }
 
 
-    public void initTreeFromUD(SemanticGraph graph) throws IOException {
+    /**
+     * Initialize the tree using semanticGraph
+     * @param graph
+     * @throws IOException
+     */
+    public void initTreeFromUD(SemanticGraph graph,Enums.VectorizationType vectorizationType) throws IOException {
         this.treemap = new HashMap<Integer, TreeNode>();
 
         //Define the reader
@@ -68,8 +77,14 @@ public class TreeBuilder {
 
         LinkedList<IndexedWord> listOfNodes = new LinkedList<IndexedWord>();
         for (IndexedWord root: listOfRoots){
-
-            utils.TreeNode node2 = new utils.TreeNode(root.value(),root.index());
+            //Extract required information
+            String nodeValue = root.value();//Actual value of each node
+            String posTag = root.tag();//PartOfSpeechTag for this node
+            List<String> relations = new ArrayList<String>();//List of Grammatical relations
+            for (GrammaticalRelation rel: graph.relns(root)) relations.add(rel.toString());
+            int nodeIndex = root.index();
+            //utils.TreeNode node2 = new utils.TreeNode(root.value(),root.index());
+            utils.TreeNode node2 = new utils.TreeNode(nodeValue,posTag,relations,nodeIndex,vectorizationType);
             node1.addChild(node2);
             node2.setParents(node1);
             listOfNodes.add(root);
@@ -77,22 +92,20 @@ public class TreeBuilder {
         }
 
         while (!listOfNodes.isEmpty()) {
+
             IndexedWord currentNode = listOfNodes.pop();
             node1 = this.treemap.get(currentNode.index());
             //Iterate over all the children
             for (IndexedWord child: graph.getChildren(currentNode)) {
-               utils.TreeNode node2 = new utils.TreeNode(child.value(),child.index());
+                List<String> relations = new ArrayList<String>();//List of Grammatical relations
+                for (GrammaticalRelation rel: graph.relns(child)) relations.add(rel.toString());
+               utils.TreeNode node2 = new utils.TreeNode(child.value(),child.tag(),relations,child.index(),vectorizationType);
                node1.addChild(node2);
                node2.setParents(node1);
                listOfNodes.add(child);
                this.treemap.put(child.index(),node2);
             }
-
-
-
         }
-
-
     }
     /**
      * Task this method takes the list-based parsedTree and converts it to a Tree-structure that could be used for the kernel computation
