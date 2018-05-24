@@ -29,7 +29,7 @@ public class udReader {
         while (it.hasNext()) {
             TreeBuilder builder = new TreeBuilder();
             SemanticGraph graph = it.next();
-            builder.initTreeFromUD(graph);
+            builder.initTreeFromUD(graph,Enums.VectorizationType.UDV1);
             List<utils.TreeNode> allSubsets = new ArrayList<utils.TreeNode>();
             List<utils.TreeNode> subsets = TreeKernel.SubsetTree(builder.root.getChildrens().get(0), allSubsets,1,3,1,3);
             System.exit(1);

@@ -39,10 +39,14 @@ public class TreeKernelNew {
      * @return
      */
     public static List<SubsetTreeNode> subsetTreeKernel(utils.TreeNode leftParentNode, utils.TreeNode rightParentNode, Map<String,List<SubsetTreeNode>> subsetMap,
-                                                         int minDepth, int maxDepth, int minWidth, int maxWidth, Map<String,Double> nodeSimilarity) {
+                                                         int minDepth, int maxDepth, int minWidth, int maxWidth, Map<String,Double> nodeSimilarity,double scorePruneThreshold) {
 
         //Calculate node-similarity between the two parent nodes
         double sim = nodeSimilarity.get(leftParentNode.getHashkey()+"|"+rightParentNode.getHashkey());//This is the similarity score between original nodes
+        if (sim<scorePruneThreshold)
+        {
+            return (new ArrayList<SubsetTreeNode>());
+        }
 
         //Get list of children for any of these two nodes
         List<utils.TreeNode> leftNodeChildren = leftParentNode.getChildrens();
@@ -62,11 +66,15 @@ public class TreeKernelNew {
             for (utils.TreeNode childT2: rightNodeChildren) {
                 //Evaluate similarity between children
                 //List<Integer> childrenSubsetSize = new ArrayList<Integer>();
-                //sim = nodeSimilarity.get(childT1.getHashkey()+"|"+childT2.getHashkey());
+                double childSim = nodeSimilarity.get(childT1.getHashkey()+"|"+childT2.getHashkey());
+                if (childSim<scorePruneThreshold)
+                {
+                    continue;
+                }
 
                 //if (childT1.getWidth()==maxWidth || childT1.getDepth()==maxDepth) continue;
 
-                List<SubsetTreeNode> childSubsets = subsetTreeKernel(childT1,childT2,subsetMap,minDepth,maxDepth,minWidth,maxWidth,nodeSimilarity);//All subsetTrees for these two nodes
+                List<SubsetTreeNode> childSubsets = subsetTreeKernel(childT1,childT2,subsetMap,minDepth,maxDepth,minWidth,maxWidth,nodeSimilarity,scorePruneThreshold);//All subsetTrees for these two nodes
                 childSubsets.add(new SubsetTreeNode(new utils.TreeNode(),new utils.TreeNode(),(double) 1));
                 childrenSubsets.add(childSubsets);//This will keep the list of subsets for any pair of children
                 childrenSubsetSize.add(childSubsets.size());
@@ -93,20 +101,22 @@ public class TreeKernelNew {
             double overallRootScore = sim;
             boolean combIsValid = true;
 
-            //System.out.print(permutations);
+
 
             for (int index: indexes) {
                 SubsetTreeNode subNode = childrenSubsets.get(counter).get(index);//This is a generated subNode (paired node and assigned similarity score)
                 //Make sure the same node is not assigned twice; For example, (b,c) and (b,d) shouldn't be considered in the same tree
+
                 if (hashKeysLeft.contains(subNode.getLeftParent().hashkey) || hashKeysRight.contains(subNode.getRightParent().hashkey)) {
                     combIsValid = false;
                     break;
                 }
 
+
                 if (subNode.getLeftParent().getValue()!=null)
                 {
-                    hashKeysLeft.add(subNode.getLeftParent().hashkey);
-                    hashKeysRight.add(subNode.getRightParent().hashkey);
+                    hashKeysLeft.add(subNode.getLeftParent().getHashkey());
+                    hashKeysRight.add(subNode.getRightParent().getHashkey());
                     //This is a real node
                     //Set the similarity score based on the similarity of parents
                     //subNode.setSimScore(subNode.getSimScore()*sim);//Similarity of children \times the similarity of parents
@@ -126,10 +136,11 @@ public class TreeKernelNew {
                 rootT1.setListOfChildren(rootChildren);
                 rootT1.setSimScore(overallRootScore);//The score for each subSetTree is equal to the product of all nodes' scores
                 if (maxDepthTemp>-1) rootT1.setDepth(maxDepthTemp+1);
-                rootT1.setWidth(width);
+                rootT1.setWidth(Math.max(width,1));
 
+                /**
                 System.out.print(rootT1.getDepth()+","+rootT1.getWidth()+"\n");
-                System.out.print(rootT1.getLeftParent().getValue()+","+rootT1.getRightParent().getValue()+"\n");
+                System.out.print(rootT1.getLeftParent().getValue()+","+rootT1.getRightParent().getValue()+","+rootT1.getSimScore()+"\n");
                 System.out.print("      ");
                 for (SubsetTreeNode n: rootChildren) {
                     System.out.print(n.getLeftParent().getValue()+","+n.getRightParent().getValue()+"****\n");
@@ -143,14 +154,16 @@ public class TreeKernelNew {
                     System.out.print("      ");
                 }
                 System.out.print("\n\n");
+                **/
 
                 if (rootT1.getListOfChildren().size()>0 && rootT1.getDepth()>=minDepth
                         && rootT1.getWidth()>=minWidth && rootT1.getDepth()<=maxDepth && rootT1.getWidth()<=maxWidth) {
                     listOfSubsetTreeNodes.add(rootT1);
                 }
+                parentSubsets.add(rootT1);
             }
 
-            parentSubsets.add(rootT1);
+
         }
 
 
@@ -217,30 +230,7 @@ public class TreeKernelNew {
                 }
                 parentSubsets.add(root);
             }
-
-            //for (utils.TreeNode leftNode: leftSubset) {
-            //  for (utils.TreeNode rightNode: rightSubset) {
-            //create new left and right nodes
-            //    utils.TreeNode root = new utils.TreeNode(parentNdoe);
-            //  List<utils.TreeNode> rootChildren = new ArrayList<utils.TreeNode>();
-            //if (leftNode.value!=null) {
-            //This is not dummy
-            //  rootChildren.add(leftNode);
-            // }
-            //if (rightNode.value!=null) rootChildren.add(rightNode);
-            //root.setChildrens(rootChildren);
-            //if (root.childrens.size()>0) {
-            //  allSubsets.add(root);
-            //}
-
-            //parentSubsets.add(root);
-            //}
-            //}
-
-            //System.out.print(parentSubsets+"\n");
-            //System.exit(1);
             return(parentSubsets);
-
 
             //Generate subsetTrees based on the generated left/right subsets
         } else {
@@ -265,21 +255,22 @@ public class TreeKernelNew {
     }
 
 
-
     /**
      *
-     * @param text1
-     * @param text2
-     * @param minDepth
-     * @param maxDepth
-     * @param minWidth
-     * @param maxWidth
-     * @param type
+     * @param text1 First sentence raw-text
+     * @param text2 Second sentence raw-text
+     * @param minDepth Minimum depth of the subsetTree
+     * @param maxDepth Maximum depth of the subsetTree
+     * @param minWidth Minimum width of the subsetTree
+     * @param maxWidth Maximum width of the subsetTree
+     * @param type Type of  the parser
+     * @param vectorizationType Type of vectorization
+     * @param scorePruneThreshold Threshold onf the similarity score between each two nodes
      * @return
      * @throws Exception
      */
     public static double calculateSubsetKernelSimilarity(String text1,String text2,int minDepth,
-                                                         int maxDepth,int minWidth,int maxWidth,Enums.DependencyType type,Enums.VectorizationType vectorizationType) throws Exception{
+                                                         int maxDepth,int minWidth,int maxWidth,Enums.DependencyType type,Enums.VectorizationType vectorizationType, double scorePruneThreshold) throws Exception{
 
 
         List<String> dependencyListTree1 = new ArrayList<String>();
@@ -336,7 +327,7 @@ public class TreeKernelNew {
                 if ((entry1.getKey()<0) || (entry2.getKey()<0)) continue;//For now, we skip ROOT
                 if (!mapOfIntraSubsets.containsKey(entry1.getKey()+"|"+entry2.getKey())) {
                     //This recursive function takes nodes and calculates CPP and CDP
-                    subsetTreeKernel(entry1.getValue(),entry2.getValue(),mapOfIntraSubsets,minDepth,maxDepth,minWidth,maxDepth,nodeSimilarity);
+                    subsetTreeKernel(entry1.getValue(),entry2.getValue(),mapOfIntraSubsets,minDepth,maxDepth,minWidth,maxDepth,nodeSimilarity,scorePruneThreshold);
                 }
             }
         }
@@ -352,7 +343,7 @@ public class TreeKernelNew {
             }
 
         }
-        System.out.print(totalNumSubsets);
+        //System.out.print(totalNumSubsets);
         return (totalNumSubsets);
 
     }
@@ -360,56 +351,20 @@ public class TreeKernelNew {
 
     public static void main(String[] argv) throws Exception {
 
-        //TreeKernel dep = new TreeKernel();
-        //List<String> dep = extractDependencyTree("I shot an elephent in my pajamas");
-        //TreeBuilder depTree1 = new TreeBuilder();
-        //boolean status1 = depTree1.initTreeStringInput(dep);
-        //System.exit(1);
 
-        //Example:
-
-        Enums.DependencyType type = Enums.DependencyType.StandardStanford;
-
+        Enums.DependencyType type = Enums.DependencyType.CONSTITUENCY;
         String sampleText = "I ate food at restaurant";
-        sampleText = "I ate food at restaurant";
+        //sampleText = "Bills on ports and immigration";
+        sampleText = "Bills on ports and immigration were submitted by Senator Brownback, Republican of Kansas";
         //System.out.print(ParseTree.extractDependencyTree(sampleText,Enums.DependencyType.StandardStanford,false,"",Enums.VectorizationType.StandardStanford));
         //System.exit(1);
         String sampleText2 = "I ate food at restaurant";
-
-        //sampleText = "Bills on ports and immigration were submitted by Senator Brownback, Republican of Kansas";
-
-       //sampleText2 = "Bills on ports and immigration were submitted by Senator Brownback, Democrat of Kansas";
-
-        double a = calculateSubsetKernelSimilarity(sampleText,sampleText2,-1,1000,-1,1000,Enums.DependencyType.StandardStanford,Enums.VectorizationType.WordIdentity);
-        /**
-        double a = calculateSubsetKernelSimilarity(sampleText,sampleText2,-1,1000,-1,1000,Enums.DependencyType.StandardStanford);
-        System.out.print(a);
-        System.exit(1);
-        List<String> constTree = ParseTree.extractConstituencyTree(sampleText);
-        List<String> constTree2 = ParseTree.extractConstituencyTree(sampleText2);
-
-        System.out.print(constTree+"\n");
-        System.out.print(constTree2+"\n");
-
-        //constTree = extractDependencyTree(sampleText);
-
-        //double similarity = calculateKernelSimilarity(constTree,constTree2);
-        //System.exit(1);
-
-        TreeBuilder depTree1 = new TreeBuilder();
-        TreeBuilder depTree2 = new TreeBuilder();
+        sampleText2= "Bills on ports and immigration were submitted by Senator Cruz, Republican of Texas";
 
 
-
-
-        boolean status1 = depTree1.initTreeStringInput(constTree);
-        boolean status2 = depTree2.initTreeStringInput(constTree2);
-
-        List<utils.TreeNode> allSubsets = new ArrayList<utils.TreeNode>();
-        Map<String,List<utils.TreeNode>> subsetMap = new HashMap<String, List<utils.TreeNode>>();
-
-        subsetTreeKernel(depTree1.root.getChildrens().get(0),depTree2.root.getChildrens().get(0),subsetMap,-1,1000,-1,1000);
-         **/
-
+        double self1 = calculateSubsetKernelSimilarity(sampleText,sampleText,-1,100,-1,100,type,Enums.VectorizationType.WordIdentity,.5);
+        double self2 = calculateSubsetKernelSimilarity(sampleText2,sampleText2,-1,100,-1,100,type,Enums.VectorizationType.WordIdentity,.5);
+        double intra = calculateSubsetKernelSimilarity(sampleText,sampleText2,-1,100,-1,100,type,Enums.VectorizationType.WordIdentity,.5);
+        System.out.print(intra/(Math.sqrt(self1*self2)));
     }
 }
