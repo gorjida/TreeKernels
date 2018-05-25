@@ -207,7 +207,9 @@ public class Enums {
 
         /* Stanford.
          */
-        SENTENCE_TERMINATOR( "." );
+        SENTENCE_TERMINATOR( "." ),
+        PCOMP( "PCOMP" )
+        ;
 
         private final String tag;
 

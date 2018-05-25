@@ -68,40 +68,45 @@ public class ParseTree {
     /**
      * TASK: this method gets the raw-text and extracts ConstituencyTree
      * @param rawText
-     * @return List of vertrices and edges in the constituencyTree
+     * @return TreeBuilder object for the given sentence based on the ConstituencyTree
      * @throws Exception
      * Example: raw-text: I shot an elephent in my pajamas==> Output: [(ROOT-1 ,S-2), (S-2 ,NP-3), (S-2 ,VP-4), (NP-3 ,PRP-5), (VP-4 ,VBD-6), (VP-4 ,NP-7), (VP-4 ,PP-8), (NP-7 ,DT-9), (NP-7 ,NN-10), (PP-8 ,IN-11), (PP-8 ,NP-12), (NP-12 ,PRP$-13), (NP-12 ,NNS-14)]
      */
-    public static List<String> extractConstituencyTree (String rawText) throws Exception {
+    public static List<TreeBuilder> extractConstituencyTree (String rawText) throws Exception {
         TreebankLanguagePack tlp = new PennTreebankLanguagePack();
         tlp.setGenerateOriginalDependencies(true);
         GrammaticalStructureFactory gsf = tlp.grammaticalStructureFactory();
         TreeRepresentation tree = new TreeRepresentation();
         DocumentPreprocessor tokanizer = new DocumentPreprocessor(new StringReader(rawText));
-        tokanizer.setTokenizerFactory(PTBTokenizer.factory());//Set tokanizer to the rule-based PTBTokenizer
+        tokanizer.setTokenizerFactory(PTBTokenizer.factory());//Set tokenizer to the rule-based PTBTokenizer
         List<TypedDependency> tdl1 = new ArrayList<TypedDependency>();
+        List<TreeBuilder> builders = new ArrayList<TreeBuilder>();
         for (List<HasWord> sentence: tokanizer) {
             Tree parsedTree = lp.apply(sentence);
             GrammaticalStructure gs1 = gsf.newGrammaticalStructure(parsedTree);
             tree.setDataFromText(parsedTree.toString());
+            TreeBuilder treeForm = new TreeBuilder();
+            treeForm.initTreeStringInput(constitutencyTreeToList(tree));
+            builders.add(treeForm);
         }
-        return (constitutencyTreeToList(tree));
+        return (builders);
     }
 
     /**
      * Extracts Dependency parser based on two conventions: Standard STANFORD and UDD_V1
      * @param rawText
-     * @param dependencyType
-     * @return
+     * @param dependencyType type of the dependency parser (UDP and StanfordStandard)
+     * @return TreeBuilder object for the given sentence and based on the given dependencyTree
      * @throws Exception
      */
-    public static List<String> extractDependencyTree (String rawText,Enums.DependencyType dependencyType
+    public static List<TreeBuilder> extractDependencyTree (String rawText,Enums.DependencyType dependencyType
             ,boolean printDepGraph,String graphFilePath,Enums.VectorizationType vectorizationType) throws Exception {
 
         DocumentPreprocessor tokanizer = new DocumentPreprocessor(new StringReader(rawText));
         tokanizer.setTokenizerFactory(PTBTokenizer.factory());//Set tokanizer to the rule-based PTBTokenizer
         List<TypedDependency> tdl1 = new ArrayList<TypedDependency>();
         //Only a single-sentence is considered here
+        List<TreeBuilder> sentenceTree = new ArrayList<TreeBuilder>();
         for (List<HasWord> sentence: tokanizer) {
 
             Tree parsedTree = lp.apply(sentence);
@@ -116,14 +121,9 @@ public class ParseTree {
             tdl1 = new ArrayList<TypedDependency>(gs1.typedDependencies());
             //System.exit(1);
             //GrammaticalStructureConversionUtils.printDependencies(gs1,tdl1,parsedTree,true,false,false);
-
             SemanticGraph semgraph = new SemanticGraph(tdl1);
             TreeBuilder tree = new TreeBuilder();
             tree.initTreeFromUD(semgraph,vectorizationType);
-            //System.out.print(tree.treemap.get(5).getValue()+"\n");
-            //System.out.print(tree.treemap.get(5).getTag()+"\n");
-            //System.out.print(tree.treemap.get(5).getVector());
-
             String dotFormat = semgraph.toDotFormat();
             if (printDepGraph) {
                 GraphViz gv = new GraphViz();
@@ -133,23 +133,16 @@ public class ParseTree {
                 java.io.File out = new java.io.File(graphFilePath + "."+type);
                 gv.writeGraphToFile(gv.getGraph(gv.getDotSource(), type, repesentationType), out);
             }
-
-            ////
-
+            sentenceTree.add(tree);
         }
         List<String> stringTdl1 = new ArrayList<String>();
         for (TypedDependency dep: tdl1) stringTdl1.add(dep.toString());
-        return(stringTdl1);
+        return(sentenceTree);
     }
 
 
     public static void main(String[] argv) throws Exception{
-        String text = "on ports and immigration";
-        List<String> results = extractDependencyTree(text,Enums.DependencyType.StandardStanford,true,"/Users/u6042446/Desktop/stanfordStandard_v2",Enums.VectorizationType.StandardStanford);
-        //System.out.print(results);
-        //System.out.print("\n\n\n");
-        //results = extractDependencyTree(text,Enums.DependencyType.UDV1);
-        //System.out.print(results);
-
+        String text = "I ate";
+        List<TreeBuilder> results = extractConstituencyTree(text);
     }
 }

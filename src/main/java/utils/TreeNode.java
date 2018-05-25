@@ -18,7 +18,7 @@ public class TreeNode implements Comparable<TreeNode> {
     public String tag;
     public int depth;
     public int width;
-    public Vector<Integer> vector;
+    public Vector<Double> vector;
     //A few more data-points
     //Embedding vector
     //StanfordStandardBased tag representation
@@ -79,7 +79,7 @@ public class TreeNode implements Comparable<TreeNode> {
 
     public List<String> getGrammaticalRelations() {return this.grammaticalRelations;}
 
-    public Vector<Integer> getVector() {return this.vector;}
+    public Vector<Double> getVector() {return this.vector;}
 
     public void setRelp(String relp) {
         this.relp = relp;
@@ -138,12 +138,14 @@ public class TreeNode implements Comparable<TreeNode> {
     /**
      *
      * @param posTag
+     * @param relationTag
+     * @param vectorizationType
      * @return
      */
-    public static Vector<Integer> createVectorRepresentation(String posTag,List<String> relationTag,Enums.VectorizationType vectorizationType)
+    public static Vector<Double> createVectorRepresentation(String posTag,List<String> relationTag,Enums.VectorizationType vectorizationType)
     {
 
-        Vector<Integer> vectorRepresentation = new Vector<Integer>();
+        Vector<Double> vectorRepresentation = new Vector<Double>();
 
         //new int[Enums.PartOfSpeech.getNumPosTags()+Enums.StanfordDependencyRelations.getNumRelationTags()];
         if (vectorizationType==Enums.VectorizationType.StandardStanford)
@@ -160,9 +162,9 @@ public class TreeNode implements Comparable<TreeNode> {
             {
                 if (index==posTagIndex || relationTagIndices.contains(index))
                 {
-                    vectorRepresentation.add(1);
+                    vectorRepresentation.add((double) 1);
                 } else {
-                    vectorRepresentation.add(0);
+                    vectorRepresentation.add((double) 0);
                 }
             }
         } else if (vectorizationType==Enums.VectorizationType.UDV1)

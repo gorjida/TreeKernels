@@ -5,6 +5,8 @@ package utils;
  */
 
 import conf.Configuration;
+import edu.stanford.nlp.ling.HasWord;
+import edu.stanford.nlp.parser.nndep.DependencyParser;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 import edu.stanford.nlp.trees.*;
@@ -14,14 +16,16 @@ import it.uniroma2.sag.kelp.data.representation.tree.node.TreeNode;
 import it.uniroma2.sag.kelp.data.representation.structure.StructureElementFactory;
 
 import java.util.*;
-import edu.stanford.nlp.ling.Sentence;
+import edu.stanford.nlp.process.DocumentPreprocessor;
+import java.io.StringReader;
 
 
+
+        //loadModel("edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz","-maxLength","80","-retainTmpSubcategories"
+        //);
 public class TreeKernel {
     public static Configuration confObject = Configuration.getInstance();
-    public static LexicalizedParser lp = LexicalizedParser.
-            loadModel("edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz","-maxLength","80","-retainTmpSubcategories"
-            );
+
 
     public static TreeNode constructTree(Map<String,List<String>> leftMap,Map<String,List<String>> rightMap,TreeNode node) throws Exception {
         String nodeContent = node.getContent().getTextFromData();
@@ -640,79 +644,11 @@ public class TreeKernel {
         return (count);
     }
 
-    /**
-     * TASK: this method gets the raw-text and extracts ConstituencyTree
-     * @param rawText
-     * @return List of vertrices and edges in the constituencyTree
-     * @throws Exception
-     * Example: raw-text: I shot an elephent in my pajamas==> Output: [(ROOT-1 ,S-2), (S-2 ,NP-3), (S-2 ,VP-4), (NP-3 ,PRP-5), (VP-4 ,VBD-6), (VP-4 ,NP-7), (VP-4 ,PP-8), (NP-7 ,DT-9), (NP-7 ,NN-10), (PP-8 ,IN-11), (PP-8 ,NP-12), (NP-12 ,PRP$-13), (NP-12 ,NNS-14)]
-     */
-    public static List<String> extractConstituencyTree (String rawText) throws Exception {
-        TreebankLanguagePack tlp = new PennTreebankLanguagePack();
-        tlp.setGenerateOriginalDependencies(true);
-        GrammaticalStructureFactory gsf = tlp.grammaticalStructureFactory();
-        TreeRepresentation tree = new TreeRepresentation();
-        String[] sent = rawText.split(" ");
-        List<CoreLabel> rawWords = edu.stanford.nlp.ling.Sentence.toCoreLabelList(sent);
-        Tree parsedTree = lp.apply(rawWords);
-        GrammaticalStructure gs1 = gsf.newGrammaticalStructure(parsedTree);
-        tree.setDataFromText(parsedTree.toString());
-        return (constitutencyTreeToList(tree));
-    }
-
-    /**
-     * TASK: this method gets the raw-text and extracts Dependency tree from StanfordParser
-     * Based on Hector's Nodes, it is "TreeBuilder", I am not sure what variation it is (based on the notes about variaties)
-     * @param rawText
-     * @throws Exception
-     * @return Flat list of labels
-     * EXAMPLE: raw-text: I shot an elephent in my pajamas==> Output: [nsubj(shot-2, I-1), root(ROOT-0, shot-2), det(elephent-4, an-3), dobj(shot-2, elephent-4), case(pajamas-7, in-5), nmod:poss(pajamas-7, my-6), nmod:in(shot-2, pajamas-7)]
-     */
-    public static List<String> extractDependencyTree (String rawText) throws Exception {
-
-        List<CoreLabel> rawWords = Sentence.toCoreLabelList(rawText.split(" "));
-        Tree parsedTree = lp.apply(rawWords);
-        TreebankLanguagePack tlp = new PennTreebankLanguagePack();
-        GrammaticalStructureFactory gsf = tlp.grammaticalStructureFactory();
-        GrammaticalStructure gs1 = gsf.newGrammaticalStructure(parsedTree);
-        List<TypedDependency> tdl1 = gs1.typedDependenciesCCprocessed();
-
-        List<String> stringTdl1 = new ArrayList<String>();
-        for (TypedDependency dep: tdl1) stringTdl1.add(dep.toString());
-        return(stringTdl1);
-    }
 
 
-    /**
-     * TASK get constitutency tree and converts it to a list of PARENT/CHILD tuples
-     * @param tree SyntactTree representation of the input sentence
-     * @return A list of tuples with (PARENT_LABEL-id,CHILD_LABEL-id)
-     */
-    public static List<String> constitutencyTreeToList(TreeRepresentation tree) {
-        List<String> outputList = new ArrayList<String>();
-        LinkedList<TreeNode> nodeKeeper = new LinkedList<TreeNode>();
-        LinkedList<Integer> idKeeper = new LinkedList<Integer>();
-        //get root
-        nodeKeeper.add(tree.getRoot());
-        int idCounter = 1;
-        idKeeper.add(idCounter);
 
-        while (!nodeKeeper.isEmpty()) {
-            TreeNode currentNode = nodeKeeper.pop();
-            String headValue = currentNode.getContent().getTextFromData();
-            int headId = idKeeper.pop();
-            for (TreeNode child: currentNode.getChildren()) {
-                if (!child.hasChildren()) continue;
-                idCounter+=1;
-                String depValue = child.getContent().getTextFromData();
-                int depId = idCounter;
-                outputList.add("("+headValue+"-"+headId+" ,"+depValue+"-"+depId+")");
-                nodeKeeper.add(child);
-                idKeeper.add(idCounter);
-            }
-        }
-        return (outputList);
-    }
+
+
 
 
     /**
@@ -728,28 +664,26 @@ public class TreeKernel {
      * @throws Exception
      */
     public static double calculateSubsetKernelSimilarity(String text1,String text2,int minDepth,
-                                                       int maxDepth,int minWidth,int maxWidth,Enums.Type type) throws Exception{
+                                                       int maxDepth,int minWidth,int maxWidth,Enums.DependencyType type) throws Exception{
 
 
-        List<String> dependencyListTree1 = new ArrayList<String>();
-        List<String> dependencyListTree2 = new ArrayList<String>();
+        List<TreeBuilder> dependencyListTree1 = new ArrayList<TreeBuilder>();
+        List<TreeBuilder> dependencyListTree2 = new ArrayList<TreeBuilder>();
 
-        if (type==Enums.Type.CONSTITUENCY) {
-            dependencyListTree1 = extractConstituencyTree(text1);
-            dependencyListTree2 = extractConstituencyTree(text2);
-        } else if (type == Enums.Type.StanfordDependency) {
-            dependencyListTree1 = extractDependencyTree(text1);
-            dependencyListTree2 = extractDependencyTree(text2);
+        if (type==Enums.DependencyType.CONSTITUENCY) {
+            dependencyListTree1 = ParseTree.extractConstituencyTree(text1);
+            dependencyListTree2 = ParseTree.extractConstituencyTree(text2);
+        } else if (type == Enums.DependencyType.StandardStanford || type == Enums.DependencyType.UDV1) {
+
+            dependencyListTree1 = ParseTree.extractDependencyTree(text1,Enums.DependencyType.UDV1,false,"",Enums.VectorizationType.StandardStanford);
+            dependencyListTree2 = ParseTree.extractDependencyTree(text2,Enums.DependencyType.UDV1,false,"",Enums.VectorizationType.StandardStanford);
         }
 
         long init = System.currentTimeMillis();
 
         //TreeBuilder Class: this takes list-based parsed-tree and creates a TreeObject (that can be used for subtree creation as well)
-        TreeBuilder depTree1 = new TreeBuilder();
-        TreeBuilder depTree2 = new TreeBuilder();
-        boolean status1 = depTree1.initTreeStringInput(dependencyListTree1);
-        boolean status2 = depTree2.initTreeStringInput(dependencyListTree2);
-        if (!status1 || !status2) return (-1);
+        TreeBuilder depTree1 = dependencyListTree1.get(0);
+        TreeBuilder depTree2 = dependencyListTree2.get(0);
         //Map of nodes within the tree
         Map<Integer, utils.TreeNode> tree1Nodes = depTree1.treemap;
         Map<Integer, utils.TreeNode> tree2Nodes = depTree2.treemap;
@@ -793,27 +727,24 @@ public class TreeKernel {
      * @return
      * @throws Exception
      */
-    public static double calculateKernelSimilarity(String text1,String text2,Enums.Type type) throws Exception {
+    public static double calculateKernelSimilarity(String text1,String text2,Enums.DependencyType type) throws Exception {
 
-        List<String> dependencyListTree1 = new ArrayList<String>();
-        List<String> dependencyListTree2 = new ArrayList<String>();
+        List<TreeBuilder> dependencyListTree1 = new ArrayList<TreeBuilder>();
+        List<TreeBuilder> dependencyListTree2 = new ArrayList<TreeBuilder>();
 
-        if (type==Enums.Type.CONSTITUENCY) {
-            dependencyListTree1 = extractConstituencyTree(text1);
-            dependencyListTree2 = extractConstituencyTree(text2);
-        } else if (type == Enums.Type.StanfordDependency) {
-            dependencyListTree1 = extractDependencyTree(text1);
-            dependencyListTree2 = extractDependencyTree(text2);
+        if (type==Enums.DependencyType.CONSTITUENCY) {
+            dependencyListTree1 = ParseTree.extractConstituencyTree(text1);
+            dependencyListTree2 = ParseTree.extractConstituencyTree(text2);
+        } else if (type == Enums.DependencyType.StandardStanford || type == Enums.DependencyType.UDV1) {
+            dependencyListTree1 = ParseTree.extractDependencyTree(text1,Enums.DependencyType.UDV1,false,"",Enums.VectorizationType.WordIdentity);
+            dependencyListTree2 = ParseTree.extractDependencyTree(text2,Enums.DependencyType.UDV1,false,"",Enums.VectorizationType.WordIdentity);
         }
 
         long init = System.currentTimeMillis();
 
         //TreeBuilder Class: this takes list-based parsed-tree and creates a TreeObject (that can be used for subtree creation as well)
-        TreeBuilder depTree1 = new TreeBuilder();
-        TreeBuilder depTree2 = new TreeBuilder();
-        boolean status1 = depTree1.initTreeStringInput(dependencyListTree1);
-        boolean status2 = depTree2.initTreeStringInput(dependencyListTree2);
-        if (!status1 || !status2) return (-1);
+        TreeBuilder depTree1 = dependencyListTree1.get(0);
+        TreeBuilder depTree2 = dependencyListTree2.get(0);
         //Map of nodes within the tree
         Map<Integer, utils.TreeNode> tree1Nodes = depTree1.treemap;
         Map<Integer, utils.TreeNode> tree2Nodes = depTree2.treemap;
@@ -940,7 +871,6 @@ public class TreeKernel {
 
     public static void main(String[] argv) throws Exception {
 
-
         //TreeKernel dep = new TreeKernel();
         //List<String> dep = extractDependencyTree("I shot an elephent in my pajamas");
         //TreeBuilder depTree1 = new TreeBuilder();
@@ -949,45 +879,30 @@ public class TreeKernel {
 
         //Example:
 
-        Enums.Type type = Enums.Type.StanfordDependency;
+        Enums.DependencyType type = Enums.DependencyType.StandardStanford;
 
-        String sampleText = "Deep learning tools have gained tremendous attention in applied machine learning.";
-        String sampleText2 = "Deep learning algorithms have received much attention in applied machine learning.";
+        String sampleText = "Two young children in blue jerseys, one with the number 9 and one with the number 2 are standing on wooden steps in a bathroom and washing their hands in a sink.";
+//        System.out.print(ParseTree.extractDependencyTree(sampleText,Enums.DependencyType.UDV1,false,"",Enums.VectorizationType.StandardStanford));
+        //System.exit(1);
+        String sampleText2 = "Two kids in jackets walk to school.";
 
-        List<String> constTree = extractConstituencyTree(sampleText);
-        List<String> constTree2 = extractConstituencyTree(sampleText2);
+        //List<String> constTree = ParseTree.extractConstituencyTree(sampleText);
+        //List<String> constTree2 = ParseTree.extractConstituencyTree(sampleText2);
 
-        System.out.print(constTree+"\n");
-        System.out.print(constTree2+"\n");
+        //System.out.print(constTree+"\n");
+        //System.out.print(constTree2+"\n");
 
         //constTree = extractDependencyTree(sampleText);
 
-        //double similarity = calculateKernelSimilarity(constTree,constTree2);
+        double similarity = calculateKernelSimilarity(sampleText,sampleText2,Enums.DependencyType.CONSTITUENCY);
+        double val = calculateSubsetKernelSimilarity(sampleText,sampleText,-1,100,-1,100,Enums.DependencyType.CONSTITUENCY);
+        System.out.print(val);
         //System.exit(1);
 
         TreeBuilder depTree1 = new TreeBuilder();
         TreeBuilder depTree2 = new TreeBuilder();
 
 
-
-
-        boolean status1 = depTree1.initTreeStringInput(constTree);
-        boolean status2 = depTree2.initTreeStringInput(constTree2);
-
-        List<utils.TreeNode> allSubsets = new ArrayList<utils.TreeNode>();
-        Map<String,List<utils.TreeNode>> subsetMap = new HashMap<String, List<utils.TreeNode>>();
-
-
-
-        subsetTreeKernel(depTree1.root.getChildrens().get(0),depTree2.root.getChildrens().get(0),subsetMap,-1,1000,-1,1000);
-        //System.out.print(depTree1.root.getChildrens().get(0).getValue().compareTo(depTree2.root.getChildrens().get(0).getValue())+"\n");
-       // System.out.print(depTree1.root.getChildrens().get(0).getHashkey()+"\n");
-        double intraComm = calculateSubsetKernelSimilarity(sampleText,sampleText2,-1,3,-1,3,type);
-        double selfComm1 = calculateSubsetKernelSimilarity(sampleText,sampleText,-1,3,-1,3,type);
-        double selfComm2 = calculateSubsetKernelSimilarity(sampleText2,sampleText2,-1,3,-1,3,type);
-        double similarity = ((double) intraComm)/Math.sqrt((double) (selfComm1*selfComm2));
-        System.out.print(similarity+"\n");
-        System.out.print(calculateKernelSimilarity(sampleText,sampleText2,type));
 
         /**
          TreebankLanguagePack tlp = new PennTreebankLanguagePack();
