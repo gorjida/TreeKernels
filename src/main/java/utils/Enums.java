@@ -10,18 +10,135 @@ import java.util.Map;
  */
 public class Enums {
 
-    enum SubSetTreeItems
+    public enum TreeStat
+    {
+        MEAN,PRODUCT;
+    }
+
+    public enum SubSetTreeItems
     {
         SUBSETS,SIMSCORE;
     }
-    enum VectorizationType
+    public enum VectorizationType
     {
         StandardStanford,UDV1,WordIdentity,WordEmbedding;
     }
 
-    enum DependencyType
+    public enum DependencyType
     {
         StandardStanford,UDV1,CONSTITUENCY;
+    }
+
+    public enum ConstituencyTreeTags {
+        DTV("-DTV"),
+        EX("EX"),
+        EXT("-EXT"),
+        FRAG("FRAG"),
+        FW("FW"),
+        HLN("-HLN"),
+        IN("IN"),
+        INTJ("INTJ"),
+        JJ("JJ"),
+        JJR("JJR"),
+        JJS("JJS"),
+        LGS("-LGS"),
+        LOC("-LOC"),
+        LS("LS"),
+        LST("LST"),
+        MD("MD"),
+        MNR("-MNR"),
+        NAC("NAC"),
+        NN("NN"),
+        NNS("NNS"),
+        NNP("NNP"),
+        NNPS("NNPS"),
+        NOM("-NOM"),
+        NP("NP"),
+        NX("NX"),
+        PDT("PDT"),
+        POS("POS"),
+        PP("PP"),
+        PRD("-PRD"),
+        PRN("PRN"),
+        PRP("PRP"),
+        PRPS("-PRP"),
+        PRT("PRT"),
+        PUT("-PUT"),
+        QP("QP"),
+        RB("RB"),
+        RBR("RBR"),
+        RBS("RBS"),
+        RP("RP"),
+        RRC("RRC"),
+        S("S"),
+        SBAR("SBAR"),
+        SBARQ("SBARQ"),
+        SBJ("-SBJ"),
+        SINV("SINV"),
+        SQ("SQ"),
+        SYM("SYM"),
+        TMP("-TMP"),
+        TO("TO"),
+        TPC("-TPC"),
+        TTL("-TTL"),
+        UCP("UCP"),
+        UH("UH"),
+        VB("VB"),
+        VBD("VBD"),
+        VBG("VBG"),
+        VBN("VBN"),
+        VBP("VBP"),
+        VBZ("VBZ"),
+        VOC("-VOC"),
+        VP("VP"),
+        WDT("WDT"),
+        WHADJP("WHADJP"),
+        WHADVP("WHADVP"),
+        WHNP("WHNP"),
+        WHPP("WHPP"),
+        WP("WP"),
+        WRB("WRB"),
+        X("X")
+        ;
+        private final String tag;
+        private ConstituencyTreeTags(String tag) {
+            this.tag = tag;
+        }
+
+        public String toString() {
+            return getTag();
+        }
+
+        protected String getTag() {
+            return this.tag;
+        }
+
+        public static ConstituencyTreeTags get( String value ) {
+            for( ConstituencyTreeTags v : values() ) {
+                if( value.equals( v.getTag() ) ) {
+                    return v;
+                }
+            }
+
+            throw new IllegalArgumentException( "Unknown part of speech: '" + value + "'." );
+        }
+
+        public static int getConstituencyTreeTags(String value) {
+            int index = 0;
+            for( ConstituencyTreeTags v : values() ) {
+
+                if( value.equals( v.getTag() ) ) {
+                    return index;
+                }
+                index+=1;
+            }
+            return (-1);
+            //throw new IllegalArgumentException( "Unknown part of speech: '" + value + "'." );
+        }
+
+        public static int getNumRelationTags() {
+            return (values().length);
+        }
     }
 
     public enum StanfordDependencyRelations {
@@ -73,7 +190,9 @@ public class Enums {
         PREP("prep"),
         SDEP("sdep"),
         VMOD("vmod"),
-        XSUBJ("xsubj");
+        XSUBJ("xsubj"),
+        PCOMP("pcomp")
+        ;
         private final String tag;
         private StanfordDependencyRelations(String tag) {
             this.tag = tag;
@@ -208,7 +327,8 @@ public class Enums {
         /* Stanford.
          */
         SENTENCE_TERMINATOR( "." ),
-        PCOMP( "PCOMP" )
+        PCOMP( "PCOMP" ),
+        PARATAXIS("parataxis")
         ;
 
         private final String tag;
@@ -238,6 +358,7 @@ public class Enums {
                 }
             }
 
+            //return ("");
             throw new IllegalArgumentException( "Unknown part of speech: '" + value + "'." );
         }
 
@@ -249,7 +370,8 @@ public class Enums {
                 }
                 index+=1;
             }
-            throw new IllegalArgumentException( "Unknown part of speech: '" + value + "'." );
+            return (-1);
+            //throw new IllegalArgumentException( "Unknown part of speech: '" + value + "'." );
         }
 
         public static int getNumPosTags() {

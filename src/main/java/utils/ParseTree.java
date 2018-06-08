@@ -53,7 +53,8 @@ public class ParseTree {
             String headValue = currentNode.getContent().getTextFromData();
             int headId = idKeeper.pop();
             for (it.uniroma2.sag.kelp.data.representation.tree.node.TreeNode child: currentNode.getChildren()) {
-                if (!child.hasChildren()) continue;
+                //if ((!child.hasChildren()) || (Enums.PartOfSpeech.getPOSIndex(child.getContent().getTextFromData())>-1)) continue;
+                if (!child.hasChildren() || Enums.PartOfSpeech.getPOSIndex(child.getContent().getTextFromData())>-1) continue;//Skip if the tag is a POSTAG
                 idCounter+=1;
                 String depValue = child.getContent().getTextFromData();
                 int depId = idCounter;
@@ -81,6 +82,7 @@ public class ParseTree {
         tokanizer.setTokenizerFactory(PTBTokenizer.factory());//Set tokenizer to the rule-based PTBTokenizer
         List<TypedDependency> tdl1 = new ArrayList<TypedDependency>();
         List<TreeBuilder> builders = new ArrayList<TreeBuilder>();
+
         for (List<HasWord> sentence: tokanizer) {
             Tree parsedTree = lp.apply(sentence);
             GrammaticalStructure gs1 = gsf.newGrammaticalStructure(parsedTree);
@@ -90,6 +92,41 @@ public class ParseTree {
             builders.add(treeForm);
         }
         return (builders);
+    }
+
+    /**
+     *
+     * @param rawText input rawText
+     * @return
+     */
+    public static List<Sentence> sentenceTokanizer(String rawText)
+    {
+        List<utils.Sentence> sentences = new ArrayList<Sentence>();
+        TreebankLanguagePack tlp = new PennTreebankLanguagePack();
+        tlp.setGenerateOriginalDependencies(true);
+        GrammaticalStructureFactory gsf = tlp.grammaticalStructureFactory();
+        TreeRepresentation tree = new TreeRepresentation();
+        DocumentPreprocessor tokanizer = new DocumentPreprocessor(new StringReader(rawText));
+        tokanizer.setTokenizerFactory(PTBTokenizer.factory());//Set tokenizer to the rule-based PTBTokenizer
+        List<TypedDependency> tdl1 = new ArrayList<TypedDependency>();
+        List<TreeBuilder> builders = new ArrayList<TreeBuilder>();
+
+        for (List<HasWord> sentence: tokanizer) {
+            String temp = "";
+            int counter = 0;
+            for (HasWord word: sentence)
+            {
+                if (counter==sentence.size()-1)
+                {
+                    temp+= word.word();
+                } else {
+                    temp+= word.word()+" ";
+                }
+            }
+
+            sentences.add(new Sentence(temp,sentence.size()));
+        }
+        return (sentences);
     }
 
     /**
@@ -142,7 +179,16 @@ public class ParseTree {
 
 
     public static void main(String[] argv) throws Exception{
-        String text = "I ate";
-        List<TreeBuilder> results = extractConstituencyTree(text);
+        String text = "And what about me now? On the days I go to my office, I\n" +
+                "wear a flannel shirt with no necktie if the weather is cool. In warm weather, I\n" +
+                "wear an open-necked sport shirt with no jacket. Some people have said that I\n" +
+                "dress \"Israeli style,\" but that isn't really it. I am asserting my membership\n" +
+                "in the club of \"Old Geezers.\" We have paid our dues. We are free of\n" +
+                "obligations, including the obligation to dress like everyone else. We know that\n" +
+                "our dress is only a trivial sign of our liberation, but it is a sign we\n" +
+                "enjoy.";
+        List<Sentence> allText = sentenceTokanizer(text);
+        System.out.print(allText);
+
     }
 }

@@ -9,11 +9,16 @@ import edu.stanford.nlp.ling.HasWord;
 import edu.stanford.nlp.parser.nndep.DependencyParser;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
+import edu.stanford.nlp.process.PTBTokenizer;
 import edu.stanford.nlp.trees.*;
 import edu.stanford.nlp.util.ArrayMap;
 import it.uniroma2.sag.kelp.data.representation.tree.TreeRepresentation;
 import it.uniroma2.sag.kelp.data.representation.tree.node.TreeNode;
 import it.uniroma2.sag.kelp.data.representation.structure.StructureElementFactory;
+import it.uniroma2.sag.kelp.kernel.tree.SubSetTreeKernel;
+import it.uniroma2.sag.kelp.kernel.tree.SubTreeKernel;
+
+
 
 import java.util.*;
 import edu.stanford.nlp.process.DocumentPreprocessor;
@@ -870,7 +875,11 @@ public class TreeKernel {
     **/
 
     public static void main(String[] argv) throws Exception {
+        LexicalizedParser lp = LexicalizedParser.
+                loadModel("edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz","-maxLength","100","-retainTmpSubcategories"
+                );
 
+        /**
         //TreeKernel dep = new TreeKernel();
         //List<String> dep = extractDependencyTree("I shot an elephent in my pajamas");
         //TreeBuilder depTree1 = new TreeBuilder();
@@ -901,33 +910,49 @@ public class TreeKernel {
 
         TreeBuilder depTree1 = new TreeBuilder();
         TreeBuilder depTree2 = new TreeBuilder();
+        **/
 
 
+        //String text = "Mary brought a cat and then came back";
+        //String text2 = "Mary brought a cat";
 
-        /**
+        String text = "If Microsoft accidentally added a few extra zeroes to the end of my paycheck , I would end up paying a higher tax rate than I had anticipated , but you would n't hear me complaining about it .";
+        String text2 = "Mary brought a cat to the school";
+
          TreebankLanguagePack tlp = new PennTreebankLanguagePack();
          tlp.setGenerateOriginalDependencies(true);
          GrammaticalStructureFactory gsf = tlp.grammaticalStructureFactory();
          TreeRepresentation tree = new TreeRepresentation();
+
          TreeRepresentation tree2 = new TreeRepresentation();
          String[] sent = text.split(" ");
-         List<CoreLabel> rawWords = edu.stanford.nlp.ling.Sentence.toCoreLabelList(sent);
+            DocumentPreprocessor tokanizer = new DocumentPreprocessor(new StringReader(text));
+            tokanizer.setTokenizerFactory(PTBTokenizer.factory());//Set tokanizer to the rule-based PTBTokenizer
+        for (List<HasWord> sentence: tokanizer) {
+            Tree parsedTree = lp.apply(sentence);
+            GrammaticalStructure gs1 = gsf.newGrammaticalStructure(parsedTree);
+            Collection<TypedDependency> tdl1 = gs1.typedDependenciesCCprocessed();
 
-         String[] sent2 = text2.split(" ");
-         List<CoreLabel> rawWords2 = edu.stanford.nlp.ling.Sentence.toCoreLabelList(sent2);
-         Tree parsedTree = lp.apply(rawWords);
-         GrammaticalStructure gs1 = gsf.newGrammaticalStructure(parsedTree);
-         Collection<TypedDependency> tdl1 = gs1.typedDependenciesCCprocessed();
+            tree.setDataFromText(parsedTree.toString());
+        }
 
-         Tree parsedTree2 = lp.apply(rawWords2);
-         GrammaticalStructure gs2 = gsf.newGrammaticalStructure(parsedTree2);
-         tree.setDataFromText(parsedTree.toString());
-         tree2.setDataFromText(parsedTree2.toString());
+        sent = text2.split(" ");
+        tokanizer = new DocumentPreprocessor(new StringReader(text2));
+        for (List<HasWord> sentence: tokanizer) {
+            Tree parsedTree = lp.apply(sentence);
+            GrammaticalStructure gs1 = gsf.newGrammaticalStructure(parsedTree);
+            Collection<TypedDependency> tdl1 = gs1.typedDependenciesCCprocessed();
+            tree2.setDataFromText(parsedTree.toString());
+            System.out.print(parsedTree.toString()+"\n");
+        }
+
+
          SubTreeKernel subTreeKernel = new SubTreeKernel();
          SubSetTreeKernel subSetTreeKernel = new SubSetTreeKernel();
+        System.out.print(subSetTreeKernel.kernelComputation(tree,tree)+"\n");
          System.out.print(subSetTreeKernel.kernelComputation(tree,tree2)/Math.sqrt(subSetTreeKernel.kernelComputation(tree,tree)*subSetTreeKernel.kernelComputation(tree2,tree2))+"\n\n\n\n");
          System.exit(1);
-         **/
+
 
     }
 }

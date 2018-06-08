@@ -12,6 +12,7 @@ public class TreeNode implements Comparable<TreeNode> {
     public String value;
     public Integer hashkey;
     public List<TreeNode> childrens;
+    public List<Integer> childrenHashkeys;
     public TreeNode parents;
     public String relp;
     public List<String> grammaticalRelations;
@@ -26,6 +27,7 @@ public class TreeNode implements Comparable<TreeNode> {
 
     public TreeNode() {
         this.childrens = new ArrayList<TreeNode>();
+        this.childrenHashkeys = new ArrayList<Integer>();
         this.depth = 0;
         this.width = 1;
     }
@@ -37,12 +39,14 @@ public class TreeNode implements Comparable<TreeNode> {
         this.hashkey = node.getHashkey();
         this.relp = node.getRelp();
         this.childrens = new ArrayList<TreeNode>();
+        this.childrenHashkeys = new ArrayList<Integer>();
     }
 
     public TreeNode(String value, Integer hashkey) {
         this.depth = 0;
         this.width = 1;
         this.childrens = new ArrayList<TreeNode>();
+        this.childrenHashkeys = new ArrayList<Integer>();
         this.value = value;
         this.hashkey = hashkey;
     }
@@ -51,6 +55,7 @@ public class TreeNode implements Comparable<TreeNode> {
         this.depth = 0;
         this.width = 1;
         this.childrens = new ArrayList<TreeNode>();
+        this.childrenHashkeys = new ArrayList<Integer>();
         this.value = value;
         this.hashkey = hashkey;
         this.relp = relp;
@@ -60,6 +65,7 @@ public class TreeNode implements Comparable<TreeNode> {
         this.depth = 0;
         this.width = 1;
         this.childrens = new ArrayList<TreeNode>();
+        this.childrenHashkeys = new ArrayList<Integer>();
         this.value = value;
         this.tag = tag;
         this.grammaticalRelations = grammaticalRelations;
@@ -104,6 +110,7 @@ public class TreeNode implements Comparable<TreeNode> {
     public List<TreeNode> getChildrens() {
         return childrens;
     }
+    public List<Integer> getChildrenHashkeys() {return this.childrenHashkeys;}
 
     public void setChildrens(List<TreeNode> childrens) {
         this.childrens = childrens;
@@ -118,7 +125,9 @@ public class TreeNode implements Comparable<TreeNode> {
     }
 
     public void addChild(TreeNode child) {
+
         this.childrens.add(child);
+        this.childrenHashkeys.add(child.getHashkey());
     }
 
     public int getChildIndex(TreeNode child) {

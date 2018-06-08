@@ -11,10 +11,29 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
 
+
+
 public class Operations {
 
     public static Configuration confObject = Configuration.getInstance();
 
+
+    public static void distinctTreeNodePermutations(List<List<Integer>> treeNodeMaxIndexes,List<List<Integer>> permutations
+            ,List<Integer> tempPermutations,int currentIndex) {
+        if (currentIndex>treeNodeMaxIndexes.size()-1) {
+            permutations.add(new ArrayList<Integer>(tempPermutations));
+            return;
+        }
+        List<Integer> nodes = treeNodeMaxIndexes.get(currentIndex);
+        for (int i: nodes) {
+
+            List<Integer> internalPermutation = new ArrayList<Integer>(tempPermutations);
+            if (new HashSet<Integer>(tempPermutations).contains(i) && i!=-1) continue;
+            internalPermutation.add(i);
+            distinctTreeNodePermutations(treeNodeMaxIndexes,permutations,internalPermutation,currentIndex+1);
+        }
+        return;
+    }
 
     public static void treeNodePermutations(List<Integer> treeNodeMaxIndexes,List<List<Integer>> permutations
             ,List<Integer> tempPermutations,int currentIndex) {
@@ -81,13 +100,13 @@ public class Operations {
         return (out);
     }
 
-    public static String intListToString (List<Integer> vals) {
+    public static String intListToString (List<Integer> vals,String delimitter) {
         String out="";
         int count = 0;
         for (int ob: vals) {
             out+= Integer.toString(ob);
             if (count<vals.size()-1) {
-                out+= "\t";
+                out+=delimitter;
             }
             count+=1;
         }
@@ -250,6 +269,30 @@ public class Operations {
         return (listOfWeights);
     }
 
+
+
+
+    public static double calculateCosineSimilarity(Vector<Double> vector1,Vector<Double> vector2)
+    {
+        double innerProduct=0;
+        double norm1=0;
+        double norm2=0;
+        for (int i=0;i<vector1.size();i++)
+        {
+            innerProduct+= vector1.get(i)*vector2.get(i);
+            norm1 += vector1.get(i)*vector1.get(i);
+            norm2 += vector2.get(i)*vector2.get(i);
+        }
+        return (Math.abs(innerProduct)/(Math.sqrt(norm1*norm2)));
+    }
+
+    /**
+     * Calculate the similarity between any two nodes in the tree using a given vectorization technique
+     * @param leftNode
+     * @param rightNode
+     * @param vectorizationType
+     * @return
+     */
     public static double calculateNodeSimilarity(utils.TreeNode leftNode,utils.TreeNode rightNode,Enums.VectorizationType vectorizationType)
     {
         if (vectorizationType==Enums.VectorizationType.WordIdentity) {
@@ -259,10 +302,10 @@ public class Operations {
                 return (0);
             }
         } else if (vectorizationType==Enums.VectorizationType.StandardStanford) {
-            Vector<Integer> leftRepresentation = leftNode.getVector();
-            Vector<Integer> rightRepresentation = rightNode.getVector();
+            Vector<Double> leftRepresentation = leftNode.getVector();
+            Vector<Double> rightRepresentation = rightNode.getVector();
             //Calculate similarity
-            return (0);
+            return (calculateCosineSimilarity(leftRepresentation,rightRepresentation));
         } else
         {
             return (0);
@@ -271,15 +314,27 @@ public class Operations {
 
 
 
+
+
     public static void main(String[] argv) throws Exception{
 
+        //System.out.print(vector.get(0,0));
+        //System.exit(1);
 
 
-        List<Integer> maxLength = new ArrayList<Integer>();
-        maxLength.add(3);
-        maxLength.add(3);
-        //maxLength.add(2);
-        //maxLength.add(2);
+        List<List<Integer>> maxLength = new ArrayList<List<Integer>>();
+        List<Integer> temp = new ArrayList<Integer>();
+        temp.add(-1);
+        temp.add(1);
+
+        maxLength.add(temp);
+        temp = new ArrayList<Integer>();
+        temp.add(-1);
+        temp.add(1);
+        temp.add(5);
+        maxLength.add(temp);
+
+        //maxLength.add(1);
         //maxLength.add(2);
         //maxLength.add(2);
         //maxLength.add(2);
@@ -288,7 +343,7 @@ public class Operations {
 
         List<List<Integer>> permutations = new ArrayList<List<Integer>>();
 
-        treeNodePermutations(maxLength,permutations,new ArrayList<Integer>(),0);
+        distinctTreeNodePermutations(maxLength,permutations,new ArrayList<Integer>(),0);
         System.out.print("\n"+permutations);
         System.exit(1);
 
