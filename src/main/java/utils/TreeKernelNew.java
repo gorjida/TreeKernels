@@ -306,7 +306,7 @@ public class TreeKernelNew {
             dependencyListTree2 = ParseTree.extractConstituencyTree(text2);
             if ((dependencyListTree1.get(0).treemap.size()>40) || (dependencyListTree2.get(0).treemap.size()>40))
             {
-                return (new SubsetTreeStats(new ArrayList<Integer>(),new ArrayList<Integer>(),-1,new ArrayList<Double>()));
+                return (new SubsetTreeStats(-1,-1,-1,-1,-1));
             }
         } else if (type == Enums.DependencyType.StandardStanford || type == Enums.DependencyType.UDV1) {
 
@@ -386,7 +386,7 @@ public class TreeKernelNew {
 
         }
         //System.out.print(totalNumSubsets);
-        return (new SubsetTreeStats(listOfDepths,listOfWidths,totalNumSubsets,nodeScores));
+        return (new SubsetTreeStats(-1,-1,-1,-1,totalNumSubsets));
     }
 
 

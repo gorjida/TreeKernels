@@ -20,11 +20,16 @@ public class TreeBuilder {
 
     public TreeNode root;
     public Map<Integer, TreeNode> treemap;
+    private int treeWidth;
+    private int treeDepth;
 
     public TreeBuilder() {
         super();
         this.treemap = new HashMap<Integer, TreeNode>();
     }
+
+    public int getTreeDepth() {return (this.treeDepth);}
+    public int getTreeWidth() {return  (this.treeWidth);}
 
 
     public static String[] customSplit(String input,String delimitter) {
@@ -91,11 +96,19 @@ public class TreeBuilder {
             this.treemap.put(root.index(),node2);
         }
 
+        double treeWidth = 0;
+        double treeDepth = Double.NEGATIVE_INFINITY;
+
         while (!listOfNodes.isEmpty()) {
 
             IndexedWord currentNode = listOfNodes.pop();
             node1 = this.treemap.get(currentNode.index());
             //Iterate over all the children
+            //if (!graph.getChildren(currentNode).isEmpty() && node1.getDepth()!=-2) treeDepth+=1;
+            if (node1.getDepth()>treeDepth) treeDepth = node1.getDepth();
+            if (graph.getChildren(currentNode).isEmpty()) treeWidth+=1;
+
+            double tempWidth = 0;
             for (IndexedWord child: graph.getChildren(currentNode)) {
                 List<String> relations = new ArrayList<String>();//List of Grammatical relations
                 for (GrammaticalRelation rel: graph.relns(child)) relations.add(rel.toString());
@@ -104,8 +117,13 @@ public class TreeBuilder {
                node2.setParents(node1);
                listOfNodes.add(child);
                this.treemap.put(child.index(),node2);
+                tempWidth+=1;
+                node2.setDepth(node1.getDepth()+1);
             }
         }
+
+        this.treeDepth = (int) treeDepth;
+        this.treeWidth = (int) treeWidth;
     }
     /**
      * Task this method takes the list-based parsedTree and converts it to a Tree-structure that could be used for the kernel computation

@@ -179,16 +179,11 @@ public class ParseTree {
 
 
     public static void main(String[] argv) throws Exception{
-        String text = "And what about me now? On the days I go to my office, I\n" +
-                "wear a flannel shirt with no necktie if the weather is cool. In warm weather, I\n" +
-                "wear an open-necked sport shirt with no jacket. Some people have said that I\n" +
-                "dress \"Israeli style,\" but that isn't really it. I am asserting my membership\n" +
-                "in the club of \"Old Geezers.\" We have paid our dues. We are free of\n" +
-                "obligations, including the obligation to dress like everyone else. We know that\n" +
-                "our dress is only a trivial sign of our liberation, but it is a sign we\n" +
-                "enjoy.";
-        List<Sentence> allText = sentenceTokanizer(text);
-        System.out.print(allText);
+        String text = "It takes another hour to search for the Book of the Dead 's opposite number , which will theoretically send Imhotep back to the cosmic soup from which he sprang before he can transfer the heroine 's soul to the embalmed remains of his lady love .";
+        List<TreeBuilder> tree = extractDependencyTree(text,Enums.DependencyType.UDV1,true,"/Users/u6042446/Desktop/test",Enums.VectorizationType.WordIdentity);
+        System.out.print(tree.get(0).getTreeWidth());
+        //List<Sentence> allText = sentenceTokanizer(text);
+        //System.out.print(allText);
 
     }
 }
