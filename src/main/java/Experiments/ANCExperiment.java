@@ -12,7 +12,7 @@ import java.util.*;
 public class SentenceTokanization {
 
     public static final int lowSentLengthThreshold = 7;
-    public static final int highSentLengthThreshold = 60;
+    public static final int highSentLengthThreshold = 40;
 
     public static String printResults(SubsetTreeStats self,String sentenceId,String type,int sentenceLength)
     {
