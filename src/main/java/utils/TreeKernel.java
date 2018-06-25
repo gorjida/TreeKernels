@@ -30,7 +30,7 @@ import java.io.StringReader;
         //);
 public class TreeKernel {
     public static Configuration confObject = Configuration.getInstance();
-
+    private ParseTree parseTree = new ParseTree();
 
     public static TreeNode constructTree(Map<String,List<String>> leftMap,Map<String,List<String>> rightMap,TreeNode node) throws Exception {
         String nodeContent = node.getContent().getTextFromData();
@@ -668,7 +668,7 @@ public class TreeKernel {
      * @return
      * @throws Exception
      */
-    public static double calculateSubsetKernelSimilarity(String text1,String text2,int minDepth,
+    public double calculateSubsetKernelSimilarity(String text1,String text2,int minDepth,
                                                        int maxDepth,int minWidth,int maxWidth,Enums.DependencyType type) throws Exception{
 
 
@@ -676,12 +676,12 @@ public class TreeKernel {
         List<TreeBuilder> dependencyListTree2 = new ArrayList<TreeBuilder>();
 
         if (type==Enums.DependencyType.CONSTITUENCY) {
-            dependencyListTree1 = ParseTree.extractConstituencyTree(text1);
-            dependencyListTree2 = ParseTree.extractConstituencyTree(text2);
+            dependencyListTree1 = parseTree.extractConstituencyTree(text1);
+            dependencyListTree2 = parseTree.extractConstituencyTree(text2);
         } else if (type == Enums.DependencyType.StandardStanford || type == Enums.DependencyType.UDV1) {
 
-            dependencyListTree1 = ParseTree.extractDependencyTree(text1,Enums.DependencyType.UDV1,false,"",Enums.VectorizationType.StandardStanford);
-            dependencyListTree2 = ParseTree.extractDependencyTree(text2,Enums.DependencyType.UDV1,false,"",Enums.VectorizationType.StandardStanford);
+            dependencyListTree1 = parseTree.extractDependencyTree(text1,Enums.DependencyType.UDV1,false,"",Enums.VectorizationType.StandardStanford);
+            dependencyListTree2 = parseTree.extractDependencyTree(text2,Enums.DependencyType.UDV1,false,"",Enums.VectorizationType.StandardStanford);
         }
 
         long init = System.currentTimeMillis();
@@ -732,17 +732,17 @@ public class TreeKernel {
      * @return
      * @throws Exception
      */
-    public static double calculateKernelSimilarity(String text1,String text2,Enums.DependencyType type) throws Exception {
+    public double calculateKernelSimilarity(String text1,String text2,Enums.DependencyType type) throws Exception {
 
         List<TreeBuilder> dependencyListTree1 = new ArrayList<TreeBuilder>();
         List<TreeBuilder> dependencyListTree2 = new ArrayList<TreeBuilder>();
 
         if (type==Enums.DependencyType.CONSTITUENCY) {
-            dependencyListTree1 = ParseTree.extractConstituencyTree(text1);
-            dependencyListTree2 = ParseTree.extractConstituencyTree(text2);
+            dependencyListTree1 = parseTree.extractConstituencyTree(text1);
+            dependencyListTree2 = parseTree.extractConstituencyTree(text2);
         } else if (type == Enums.DependencyType.StandardStanford || type == Enums.DependencyType.UDV1) {
-            dependencyListTree1 = ParseTree.extractDependencyTree(text1,Enums.DependencyType.UDV1,false,"",Enums.VectorizationType.WordIdentity);
-            dependencyListTree2 = ParseTree.extractDependencyTree(text2,Enums.DependencyType.UDV1,false,"",Enums.VectorizationType.WordIdentity);
+            dependencyListTree1 = parseTree.extractDependencyTree(text1,Enums.DependencyType.UDV1,false,"",Enums.VectorizationType.WordIdentity);
+            dependencyListTree2 = parseTree.extractDependencyTree(text2,Enums.DependencyType.UDV1,false,"",Enums.VectorizationType.WordIdentity);
         }
 
         long init = System.currentTimeMillis();

@@ -25,6 +25,7 @@ import java.io.StringReader;
 //);
 public class TreeKernelNew {
     public static Configuration confObject = Configuration.getInstance();
+    private ParseTree parseTree = new ParseTree();
 
     /**
      *
@@ -276,7 +277,7 @@ public class TreeKernelNew {
      * @return Similarity score between two given sentences
      * @throws Exception
      */
-    public static double subsetTreeKernelSimilarity(String text1,String text2,int minDepth,
+    public double subsetTreeKernelSimilarity(String text1,String text2,int minDepth,
                                                     int maxDepth,int minWidth,int maxWidth,Enums.DependencyType type,Enums.VectorizationType vectorizationType,Enums.TreeStat treeStat,
                                                     double scorePruneThreshold,double nodeStatWeight,double decayFactor) throws Exception
     {
@@ -291,7 +292,7 @@ public class TreeKernelNew {
 
 
 
-    public static SubsetTreeStats calculateSubsetKernelSimilarity(String text1,String text2,int minDepth,
+    public SubsetTreeStats calculateSubsetKernelSimilarity(String text1,String text2,int minDepth,
                                                          int maxDepth,int minWidth,int maxWidth,Enums.DependencyType type,
                                                                   Enums.VectorizationType vectorizationType,Enums.TreeStat treeStat, double scorePruneThreshold,double nodeStatWeight,double decayFactor) throws Exception{
 
@@ -302,16 +303,16 @@ public class TreeKernelNew {
         if (type==Enums.DependencyType.CONSTITUENCY) {
             //System.out.print("Enforcing Vectorization for Constituency Tree (we only support identity similarity)\n");
             vectorizationType = Enums.VectorizationType.WordIdentity;
-            dependencyListTree1 = ParseTree.extractConstituencyTree(text1);
-            dependencyListTree2 = ParseTree.extractConstituencyTree(text2);
+            dependencyListTree1 = parseTree.extractConstituencyTree(text1);
+            dependencyListTree2 = parseTree.extractConstituencyTree(text2);
             if ((dependencyListTree1.get(0).treemap.size()>40) || (dependencyListTree2.get(0).treemap.size()>40))
             {
                 return (new SubsetTreeStats(-1,-1,-1,-1,-1));
             }
         } else if (type == Enums.DependencyType.StandardStanford || type == Enums.DependencyType.UDV1) {
 
-            dependencyListTree1 = ParseTree.extractDependencyTree(text1,type,false,"",vectorizationType);
-            dependencyListTree2 = ParseTree.extractDependencyTree(text2,type,false,"",vectorizationType);
+            dependencyListTree1 = parseTree.extractDependencyTree(text1,type,false,"",vectorizationType);
+            dependencyListTree2 = parseTree.extractDependencyTree(text2,type,false,"",vectorizationType);
         }
 
         long init = System.currentTimeMillis();
@@ -402,8 +403,8 @@ public class TreeKernelNew {
         String sampleText2 = "Two kids in jackets walk to school.";
         //sampleText2= "the literature has vastly discussed  multiple trajectory planning methodologies";
 
-        SubsetTreeStats self1 = calculateSubsetKernelSimilarity(sampleText,sampleText,-1,1000,-1,1000, type, Enums.VectorizationType.WordIdentity, Enums.TreeStat.PRODUCT, 1,.9,1);
+        //SubsetTreeStats self1 = calculateSubsetKernelSimilarity(sampleText,sampleText,-1,1000,-1,1000, type, Enums.VectorizationType.WordIdentity, Enums.TreeStat.PRODUCT, 1,.9,1);
 
-        System.out.print(self1.getTotalNumSubsets());
+        //System.out.print(self1.getTotalNumSubsets());
     }
 }

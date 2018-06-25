@@ -1,5 +1,6 @@
 package utils;
 
+import Experiments.DepthWidthExperiment;
 import org.omg.PortableServer.POA;
 
 import java.util.HashMap;
@@ -8,6 +9,7 @@ import java.util.Map;
 /**
  * Created by u6042446 on 2018-04-20.
  */
+
 public class Enums {
 
     public enum TreeStat
@@ -28,6 +30,7 @@ public class Enums {
     {
         StandardStanford,UDV1,CONSTITUENCY;
     }
+
 
     public enum ConstituencyTreeTags {
         DTV("-DTV"),
@@ -326,7 +329,7 @@ public class Enums {
 
         /* Stanford.
          */
-        SENTENCE_TERMINATOR( "." ),
+        //SENTENCE_TERMINATOR( "." ),
         PCOMP( "PCOMP" ),
         PARATAXIS("parataxis")
         ;

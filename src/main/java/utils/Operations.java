@@ -16,10 +16,29 @@ import java.util.*;
 public class Operations {
 
     public static Configuration confObject = Configuration.getInstance();
+    public static final Map<Enums.DependencyType,Double> DepthThresholds;
+    public static final Map<Enums.DependencyType,Double> WidthThresholds;
+
+
+    static
+    {
+        DepthThresholds = new HashMap<Enums.DependencyType, Double>();
+        WidthThresholds = new HashMap<Enums.DependencyType, Double>();
+        DepthThresholds.put(Enums.DependencyType.CONSTITUENCY,.78);
+        DepthThresholds.put(Enums.DependencyType.StandardStanford,.69);
+        DepthThresholds.put(Enums.DependencyType.UDV1,.6);
+
+        WidthThresholds.put(Enums.DependencyType.CONSTITUENCY,.55);
+        WidthThresholds.put(Enums.DependencyType.UDV1,.65);
+        WidthThresholds.put(Enums.DependencyType.StandardStanford,.65);
+    }
+
+    public static final int MAXHYP = (int) Math.pow(3,10);
 
 
     public static void distinctTreeNodePermutations(List<List<Integer>> treeNodeMaxIndexes,List<List<Integer>> permutations
             ,List<Integer> tempPermutations,int currentIndex) {
+        //if (permutations.size()==MAXHYP) return;
         if (currentIndex>treeNodeMaxIndexes.size()-1) {
             permutations.add(new ArrayList<Integer>(tempPermutations));
             return;
@@ -324,14 +343,11 @@ public class Operations {
 
         List<List<Integer>> maxLength = new ArrayList<List<Integer>>();
         List<Integer> temp = new ArrayList<Integer>();
-        temp.add(-1);
         temp.add(1);
 
         maxLength.add(temp);
         temp = new ArrayList<Integer>();
         temp.add(-1);
-        temp.add(1);
-        temp.add(5);
         maxLength.add(temp);
 
         //maxLength.add(1);

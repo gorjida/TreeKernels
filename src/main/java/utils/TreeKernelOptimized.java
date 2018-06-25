@@ -12,7 +12,9 @@ import java.util.*;
 //loadModel("edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz","-maxLength","80","-retainTmpSubcategories"
 //);
 public class TreeKernelOptimized {
+    public static final int MAXHYP = (int) Math.pow(3,10);
     public static Configuration confObject = Configuration.getInstance();
+    private ParseTree parseTree = new ParseTree();
 
 
     /**
@@ -21,7 +23,7 @@ public class TreeKernelOptimized {
      * @param leftTreeNodes List of all the children in the left-tree
      * @return List of generated hypotheses
      */
-    public static List<Hypothesis> generateHypotheses(Map<Integer,Map<Integer,Double>> nodeSimilarity,List<Integer> leftTreeNodes,Set<Integer> rightTreeNodes)
+    public List<Hypothesis> generateHypotheses(Map<Integer,Map<Integer,Double>> nodeSimilarity,List<Integer> leftTreeNodes,Set<Integer> rightTreeNodes)
     {
 
         //Generate all potential assignments
@@ -33,6 +35,7 @@ public class TreeKernelOptimized {
             for (int potentialId: nodeSimilarity.get(id).keySet()) {
                 if (rightTreeNodes.contains(potentialId) || potentialId==-1) rightNodes.add(potentialId);
             }
+            if (rightNodes.isEmpty()) rightNodes.add(-1);//There is no assignment to this node
             assignedNodes.add(rightNodes);
             //Calculate negative-sample score
             double maxVal = Double.NEGATIVE_INFINITY;
@@ -50,8 +53,22 @@ public class TreeKernelOptimized {
             }
         }
 
-        //System.out.print(assignedNodes);
-        //System.exit(1);
+
+        int totalNumHypotheses = 1;
+        for (List<Integer> list: assignedNodes) {
+            if (list.size()==0) continue;
+            totalNumHypotheses*= list.size();
+            if (totalNumHypotheses>MAXHYP) break;
+        }
+        //if (totalNumHypotheses>MAXHYP) {
+        //    return (new ArrayList<Hypothesis>());
+        //}
+        if (totalNumHypotheses>MAXHYP)
+        {
+            return (null);
+        }
+
+        //System.out.print(assignedNodes+">>>>\n");
         //Find all the permutations
         //utils.Operations.distinctTreeNodePermutations();
         List<Hypothesis> listOfHypotheses = new ArrayList<Hypothesis>();
@@ -62,6 +79,7 @@ public class TreeKernelOptimized {
         //System.exit(1);
         //Iterate over each hypothesis
         double totalScore = 0;
+        //Each entry corresponds to an assignment
         for (List<Integer> h: permutations)
         {
             //Calculate score for this hypothesis
@@ -73,8 +91,8 @@ public class TreeKernelOptimized {
             {
                 if (id==-1)
                 {
-
-                    score*= negScore.get(counter);
+                    //We don't have any concept of UNDEDTECTED; Therefore, no-assignment doesn't contribute to the overal score
+                    //score*= negScore.get(counter);
                     counter+=1;
                     continue;
                 }
@@ -112,18 +130,23 @@ public class TreeKernelOptimized {
 
 
 
-    public static double subsetTreeKernel(utils.TreeNode leftParentNode, utils.TreeNode rightParentNode, Map<Integer,Map<Integer,Double>> nodeSimilarity,
-                                          Map<Integer, utils.TreeNode> leftTreeMap,Map<Integer, utils.TreeNode> rightTreeMap,double scorePruneThreshold,double nodeStatWeight,double decayFactor) {
+    public double subsetTreeKernel(utils.TreeNode leftParentNode, utils.TreeNode rightParentNode, Map<Integer,Map<Integer,Double>> nodeSimilarity,
+                                          Map<Integer, utils.TreeNode> leftTreeMap,Map<Integer, utils.TreeNode> rightTreeMap,double scorePruneThreshold
+            ,double nodeStatWeight,double decayFactor,double widthFactor) {
 
         //Calculate node-similarity between the two parent nodes
         double sim = 0;
         if (nodeSimilarity.get(leftParentNode.getHashkey()).containsKey(rightParentNode.getHashkey())) sim = nodeSimilarity.get(leftParentNode.getHashkey()).get(rightParentNode.getHashkey());
-        //System.out.print(leftParentNode.getHashkey()+","+rightParentNode.getHashkey()+"\n");
 
-        if (sim<scorePruneThreshold)
-        {
-            return (0); //If similarity is below the threshold, simply return "0"
-        }
+        //if (sim<scorePruneThreshold)
+        //{
+        //    return (0); //If similarity is below the threshold, simply return "0"
+        //}
+
+        //if (leftParentNode.getHashkey()==3 && rightParentNode.getHashkey()==3) {
+        //    System.out.print(sim+ ">>>>>\n");
+        //}
+        //System.out.print(leftParentNode.getHashkey()+","+rightParentNode.getHashkey()+ "," + sim+"\n");
         //Gather all the children
         List<utils.TreeNode> leftNodeChildren = leftParentNode.getChildrens();
         List<utils.TreeNode> rightNodeChildren = rightParentNode.getChildrens();
@@ -133,26 +156,62 @@ public class TreeKernelOptimized {
         }
 
         //Get set of all the hypotheses
+
+        //System.out.print(leftParentNode.getChildrenHashkeys().size()+"\n");
+
         List<Hypothesis> listOfHypotheses = generateHypotheses(nodeSimilarity,leftParentNode.getChildrenHashkeys(),
                 new HashSet<Integer>(rightParentNode.getChildrenHashkeys()));
-        //System.out.print(listOfHypotheses.size()+"\n");
-        //Loop over each hypothesis
-        double totalNumSubtrees=0;
-        for (Hypothesis h: listOfHypotheses)
+
+        //if (leftParentNode.getHashkey()==2 && rightParentNode.getHashkey()==2)
+        //{
+         //   System.out.print(leftParentNode.getChildrenHashkeys()+","+ rightParentNode.getChildrenHashkeys()+"\n");
+        //}
+
+
+        if (listOfHypotheses==null)
         {
-            List<Integer> leftNodes = h.getLeftNodes();
-            List<Integer> rightNodes = h.getRightNodes();
-            double thisHypothesisSubsetTree = 1;
-            for (int i=0;i<leftNodes.size();i++)
+            //System.out.print("HERE\n");
+            return (-1);
+        } else  if (listOfHypotheses.size()==0)
+        {
+            return (sim);
+
+        } else
+        {
+            //Loop over each hypothesis
+            double totalNumSubtrees=0;
+            //Loop over all the hypotheses
+            for (Hypothesis h: listOfHypotheses)
             {
-                utils.TreeNode leftTreeNode = leftTreeMap.get(leftNodes.get(i));
-                utils.TreeNode rightTreeNode = rightTreeMap.get(rightNodes.get(i));
-                double hSim = subsetTreeKernel(leftTreeNode,rightTreeNode,nodeSimilarity,leftTreeMap,rightTreeMap,scorePruneThreshold,nodeStatWeight,decayFactor);
-                thisHypothesisSubsetTree*= (1+hSim);
+                List<Integer> leftNodes = h.getLeftNodes();
+                List<Integer> rightNodes = h.getRightNodes();
+                double thisHypothesisSubsetTree = 1;
+                for (int i=0;i<leftNodes.size();i++)
+                {
+                    utils.TreeNode leftTreeNode = leftTreeMap.get(leftNodes.get(i));
+                    utils.TreeNode rightTreeNode = rightTreeMap.get(rightNodes.get(i));
+                    double hSim = subsetTreeKernel(leftTreeNode,rightTreeNode,nodeSimilarity,leftTreeMap,rightTreeMap,scorePruneThreshold,nodeStatWeight,decayFactor,widthFactor);
+                    if (hSim==-1) {
+                        thisHypothesisSubsetTree = -1;
+                        break;
+                    }
+                    thisHypothesisSubsetTree*= (1+widthFactor*hSim);
+                }
+                if (thisHypothesisSubsetTree==-1)
+                {
+                    totalNumSubtrees = -1;
+                    break;
+                }
+                totalNumSubtrees+= h.getScore()*thisHypothesisSubsetTree*decayFactor;
+                //if (leftParentNode.getHashkey()==2 && rightParentNode.getHashkey()==2)
+                //{
+                //    System.out.print(totalNumSubtrees+"\n");
+                //}
             }
-            totalNumSubtrees+= h.getScore()*thisHypothesisSubsetTree*decayFactor;
+            return (sim*totalNumSubtrees);
         }
-        return (sim*totalNumSubtrees);
+
+
     }
 
 
@@ -166,7 +225,7 @@ public class TreeKernelOptimized {
      * @param maxWidth
      * @return
      */
-    public static List<utils.TreeNode> SubsetTree(utils.TreeNode parentNdoe,List<utils.TreeNode> allSubsets
+    public List<utils.TreeNode> SubsetTree(utils.TreeNode parentNdoe,List<utils.TreeNode> allSubsets
             ,int minDepth,int maxDepth,int minWidth,int maxWidth) {
 
         //Check for the node's children
@@ -234,34 +293,59 @@ public class TreeKernelOptimized {
 
 
 
-    public static SubsetTreeStats calculateSubsetKernelSimilarity(String text1,String text2,Enums.DependencyType type,
-                                                                  Enums.VectorizationType vectorizationType,Enums.TreeStat treeStat, double scorePruneThreshold,double nodeStatWeight,double decayFactor) throws Exception{
+    public SubsetTreeStats calculateSubsetKernelSimilarity(String text1,String text2,Enums.DependencyType type,
+                                                                  Enums.VectorizationType vectorizationType,Enums.TreeStat treeStat,
+                                                           double scorePruneThreshold,double nodeStatWeight,double decayFactor,double widthFactor,boolean isSelf) throws Exception{
 
 
         List<TreeBuilder> dependencyListTree1= new ArrayList<TreeBuilder>();
         List<TreeBuilder> dependencyListTree2 = new ArrayList<TreeBuilder>();
 
+        long currentTime = System.currentTimeMillis();
         if (type==Enums.DependencyType.CONSTITUENCY) {
             //System.out.print("Enforcing Vectorization for Constituency Tree (we only support identity similarity)\n");
             vectorizationType = Enums.VectorizationType.WordIdentity;
-            dependencyListTree1 = ParseTree.extractConstituencyTree(text1);
-            dependencyListTree2 = ParseTree.extractConstituencyTree(text2);
-            //if ((dependencyListTree1.get(0).treemap.size()>50) || (dependencyListTree2.get(0).treemap.size()>50))
+            dependencyListTree1 = parseTree.extractConstituencyTree(text1);
+
+
+            if (!isSelf)
+            {
+                dependencyListTree2 = parseTree.extractConstituencyTree(text2);
+            } else {
+                dependencyListTree2 = new ArrayList<TreeBuilder>(dependencyListTree1);
+            }
+
+            //if (!dependencyListTree1.get(0).getIsValid() || !dependencyListTree2.get(0).getIsValid())
+            //{
+            //    return (new SubsetTreeStats(dependencyListTree1.get(0).getTreeDepth(),dependencyListTree1.get(0).getTreeWidth(),dependencyListTree1.get(0).getTreeDepth(),dependencyListTree1.get(0).getTreeWidth(),-1));
+            //}
+            //if ((dependencyListTree1.get(0).getTreeWidth()>10) || (dependencyListTree2.get(0).treemap.size()>50))
             //{
             //    return (-1);
             //}
         } else if (type == Enums.DependencyType.StandardStanford || type == Enums.DependencyType.UDV1) {
 
-            dependencyListTree1 = ParseTree.extractDependencyTree(text1,type,false,"",vectorizationType);
-            dependencyListTree2 = ParseTree.extractDependencyTree(text2,type,false,"",vectorizationType);
+            dependencyListTree1 = parseTree.extractDependencyTree(text1,type,false,"",vectorizationType);
+            //System.out.print(text1+"\n");
+            //System.out.print(dependencyListTree1.get(0).treemap.get(2).getChildrens().get(1).getValue()+"****\n");
+            if (!isSelf)
+            {
+                dependencyListTree2 = parseTree.extractDependencyTree(text2,type,false,"",vectorizationType);
+            } else
+            {
+                dependencyListTree2 = new ArrayList<TreeBuilder>(dependencyListTree1);
+            }
+
         }
+        long finishTime = System.currentTimeMillis();
+        //System.out.print("Parsing time:"+(finishTime-currentTime)/1000+"\n");
 
         long init = System.currentTimeMillis();
 
         //For now, there is only one sentence, so get the first entry (fix this later)
-
+        currentTime = System.currentTimeMillis();
         TreeBuilder depTree1 = dependencyListTree1.get(0);
-        TreeBuilder depTree2 = dependencyListTree2.get(0);
+        TreeBuilder depTree2= dependencyListTree2.get(0);
         //Map of nodes within the tree
         Map<Integer, utils.TreeNode> tree1Nodes = depTree1.treemap;
         Map<Integer, utils.TreeNode> tree2Nodes = depTree2.treemap;
@@ -281,7 +365,11 @@ public class TreeKernelOptimized {
         Map<Integer,Double> maxSaver = new HashMap<Integer, Double>();
 
 
-        //Map<Integer,Map<Integer,>> assignedNodes
+        //Initialize nodeSimilarity
+        for (Map.Entry<Integer,utils.TreeNode> entry1: tree1Nodes.entrySet()) {
+            nodeSimilarity.put(entry1.getKey(),new HashMap<Integer, Double>());
+        }
+            //Map<Integer,Map<Integer,>> assignedNodes
         for (Map.Entry<Integer,utils.TreeNode> entry1: tree1Nodes.entrySet()) {
             for (Map.Entry<Integer,utils.TreeNode> entry2: tree2Nodes.entrySet()) {
                 //Calculate commmonDownwardPath for this combination
@@ -290,8 +378,10 @@ public class TreeKernelOptimized {
                 Vector<Double> vector2 = entry2.getValue().getVector();
                 //Now calculate similarity
                 double sim = Operations.calculateNodeSimilarity(entry1.getValue(),entry2.getValue(),vectorizationType);
+                if (sim<scorePruneThreshold) continue;//PRune all assignments below a threshold
+                //System.out.print(sim+"\n");
                 //if ((entry1.getKey()==1 && entry2.getKey()==2)) sim = .5;
-                if (!nodeSimilarity.containsKey(entry1.getKey())) nodeSimilarity.put(entry1.getKey(),new HashMap<Integer, Double>());
+                //System.out.print(entry1.getKey()+","+entry1.getValue().getValue()+"\n");
                 if (!maxSaver.containsKey(entry1.getKey())) maxSaver.put(entry1.getKey(),Double.NEGATIVE_INFINITY);
                 if (sim>maxSaver.get(entry1.getKey())) maxSaver.put(entry1.getKey(),sim);
                 Map<Integer,Double> soFarSimilarities = nodeSimilarity.get(entry1.getKey());
@@ -299,21 +389,8 @@ public class TreeKernelOptimized {
             }
         }
 
-        //System.out.print(nodeSimilarity+"\n");
-        //for (Map.Entry<Integer,Double> entry: maxSaver.entrySet())
-        //{
-           // Map<Integer,Double> soFarSimilarities = nodeSimilarity.get(entry.getKey());
-           // soFarSimilarities.put(-1,1-entry.getValue());
-        //}
-        //System.out.print(nodeSimilarity+"\n");
-        //System.out.print(nodeSimilarity+"\n");
-        //List<Integer> temp2 = new ArrayList<Integer>();
-        //temp2.add(6);temp2.add(3);
-        //HashSet<Integer> temp3 = new HashSet<Integer>();
-        //temp3.add(6);temp3.add(3);
-        //generateHypotheses(nodeSimilarity,temp2,temp3);
 
-
+        System.out.print(nodeSimilarity+"\n");
         //Loop over all the intra-nodes
         Map<String,Double> mapOfIntraSubsets = new HashMap<String, Double>();
         for (Map.Entry<Integer,utils.TreeNode> entry1: tree1Nodes.entrySet()) {
@@ -323,24 +400,25 @@ public class TreeKernelOptimized {
                 if (!mapOfIntraSubsets.containsKey(entry1.getKey()+"|"+entry2.getKey())) {
                     //System.out.print(entry1.getKey()+","+entry2.getKey()+"\n");
 
-                        double value = subsetTreeKernel(entry1.getValue(),entry2.getValue(),nodeSimilarity,tree1Nodes,tree2Nodes,scorePruneThreshold,nodeStatWeight,decayFactor);
+                        double value = subsetTreeKernel(entry1.getValue(),entry2.getValue(),nodeSimilarity,tree1Nodes,tree2Nodes,scorePruneThreshold,nodeStatWeight,decayFactor,widthFactor);
+                        //System.out.print(value+"\n");
+                        if (value<0) return (new SubsetTreeStats(dependencyListTree1.get(0).getTreeDepth(),dependencyListTree1.get(0).getTreeWidth(),dependencyListTree1.get(0).getTreeDepth(),dependencyListTree1.get(0).getTreeWidth(),-1));
                         //System.exit(1);
-                        mapOfIntraSubsets.put(entry1.getKey()+"|"+entry2.getKey(),Math.max(0,value-1));
-
+                        //System.out.print(entry1.getKey()+"|"+entry2.getKey()+","+value+"\n");
+                        mapOfIntraSubsets.put(entry1.getKey()+"|"+entry2.getKey(),value);
                     //double value = subsetTreeKernel(entry2.getValue(),entry2.getValue(),nodeSimilarity,tree1Nodes,tree2Nodes,scorePruneThreshold,nodeStatWeight,decayFactor);
 
                 }
             }
         }
-
-        //System.out.print(mapOfIntraSubsets);
-
-
+        finishTime = System.currentTimeMillis();
+        //System.out.print("Subset-tree time is:"+(finishTime-currentTime)+"\n");
         double totalNumSubsets= 0 ;
+
 
         for (Map.Entry<String,Double> entry: mapOfIntraSubsets.entrySet()) {
 
-            totalNumSubsets+= entry.getValue();
+            totalNumSubsets+= (Math.max(0,entry.getValue()-1));
 
         }
         //System.out.print("\n"+totalNumSubsets);
@@ -365,8 +443,8 @@ public class TreeKernelOptimized {
         //System.exit(1);
         String sampleText2 = "";
         //sampleText2= "the literature has vastly discussed  multiple trajectory planning methodologies";
-
-        SubsetTreeStats stats= calculateSubsetKernelSimilarity(sampleText,sampleText, type, Enums.VectorizationType.WordIdentity, Enums.TreeStat.PRODUCT, 1,.9,1);
+        TreeKernelOptimized kernel = new TreeKernelOptimized();
+        SubsetTreeStats stats= kernel.calculateSubsetKernelSimilarity(sampleText,sampleText, type, Enums.VectorizationType.WordIdentity, Enums.TreeStat.PRODUCT, 1,.9,1,1,true);
 
         //System.out.print(stats.getLeftTreeDepth()+"\n"+stats.getLeftTreeWidth()+"\n"+stats.getTotalNumSubsets()+"\n");
     }

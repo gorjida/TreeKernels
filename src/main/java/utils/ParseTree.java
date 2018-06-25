@@ -9,8 +9,7 @@ import edu.stanford.nlp.trees.*;
 import it.uniroma2.sag.kelp.data.representation.tree.TreeRepresentation;
 import it.uniroma2.sag.kelp.data.representation.tree.node.*;
 
-import java.io.PrintWriter;
-import java.io.StringReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,7 +27,7 @@ import guru.nidi.graphviz.engine.Graphviz;
 public class ParseTree {
 
     public static Configuration confObject = Configuration.getInstance();
-    public static LexicalizedParser lp = LexicalizedParser.
+    public LexicalizedParser lp = LexicalizedParser.
             loadModel("edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz","-maxLength","100","-retainTmpSubcategories"
             );
 
@@ -39,7 +38,7 @@ public class ParseTree {
      * @param tree SyntactTree representation of the input sentence
      * @return A list of tuples with (PARENT_LABEL-id,CHILD_LABEL-id)
      */
-    public static List<String> constitutencyTreeToList(TreeRepresentation tree) {
+    public List<String> constitutencyTreeToList(TreeRepresentation tree) {
         List<String> outputList = new ArrayList<String>();
         LinkedList<it.uniroma2.sag.kelp.data.representation.tree.node.TreeNode> nodeKeeper = new LinkedList<it.uniroma2.sag.kelp.data.representation.tree.node.TreeNode>();
         LinkedList<Integer> idKeeper = new LinkedList<Integer>();
@@ -73,13 +72,14 @@ public class ParseTree {
      * @throws Exception
      * Example: raw-text: I shot an elephent in my pajamas==> Output: [(ROOT-1 ,S-2), (S-2 ,NP-3), (S-2 ,VP-4), (NP-3 ,PRP-5), (VP-4 ,VBD-6), (VP-4 ,NP-7), (VP-4 ,PP-8), (NP-7 ,DT-9), (NP-7 ,NN-10), (PP-8 ,IN-11), (PP-8 ,NP-12), (NP-12 ,PRP$-13), (NP-12 ,NNS-14)]
      */
-    public static List<TreeBuilder> extractConstituencyTree (String rawText) throws Exception {
+    public List<TreeBuilder> extractConstituencyTree (String rawText) throws Exception {
         TreebankLanguagePack tlp = new PennTreebankLanguagePack();
         tlp.setGenerateOriginalDependencies(true);
         GrammaticalStructureFactory gsf = tlp.grammaticalStructureFactory();
         TreeRepresentation tree = new TreeRepresentation();
         DocumentPreprocessor tokanizer = new DocumentPreprocessor(new StringReader(rawText));
         tokanizer.setTokenizerFactory(PTBTokenizer.factory());//Set tokenizer to the rule-based PTBTokenizer
+        tokanizer.setSentenceDelimiter(" ");
         List<TypedDependency> tdl1 = new ArrayList<TypedDependency>();
         List<TreeBuilder> builders = new ArrayList<TreeBuilder>();
 
@@ -99,8 +99,9 @@ public class ParseTree {
      * @param rawText input rawText
      * @return
      */
-    public static List<Sentence> sentenceTokanizer(String rawText)
+    public static boolean sentenceTokanizerStatus(String rawText)
     {
+        boolean status = true;
         List<utils.Sentence> sentences = new ArrayList<Sentence>();
         TreebankLanguagePack tlp = new PennTreebankLanguagePack();
         tlp.setGenerateOriginalDependencies(true);
@@ -111,22 +112,13 @@ public class ParseTree {
         List<TypedDependency> tdl1 = new ArrayList<TypedDependency>();
         List<TreeBuilder> builders = new ArrayList<TreeBuilder>();
 
+        int counter = 0;
         for (List<HasWord> sentence: tokanizer) {
-            String temp = "";
-            int counter = 0;
-            for (HasWord word: sentence)
-            {
-                if (counter==sentence.size()-1)
-                {
-                    temp+= word.word();
-                } else {
-                    temp+= word.word()+" ";
-                }
-            }
-
-            sentences.add(new Sentence(temp,sentence.size()));
+            System.out.print(sentence+"\n");
+            counter+=1;
         }
-        return (sentences);
+        if (counter>1) status = false;
+        return (status);
     }
 
     /**
@@ -136,17 +128,18 @@ public class ParseTree {
      * @return TreeBuilder object for the given sentence and based on the given dependencyTree
      * @throws Exception
      */
-    public static List<TreeBuilder> extractDependencyTree (String rawText,Enums.DependencyType dependencyType
+    public List<TreeBuilder> extractDependencyTree (String rawText,Enums.DependencyType dependencyType
             ,boolean printDepGraph,String graphFilePath,Enums.VectorizationType vectorizationType) throws Exception {
 
         DocumentPreprocessor tokanizer = new DocumentPreprocessor(new StringReader(rawText));
         tokanizer.setTokenizerFactory(PTBTokenizer.factory());//Set tokanizer to the rule-based PTBTokenizer
+        tokanizer.setSentenceDelimiter(" ");
         List<TypedDependency> tdl1 = new ArrayList<TypedDependency>();
         //Only a single-sentence is considered here
         List<TreeBuilder> sentenceTree = new ArrayList<TreeBuilder>();
         for (List<HasWord> sentence: tokanizer) {
-
             Tree parsedTree = lp.apply(sentence);
+
             TreebankLanguagePack tlp = new PennTreebankLanguagePack();
             if (dependencyType==Enums.DependencyType.StandardStanford) {
                 tlp.setGenerateOriginalDependencies(true);//enforce the depndency to generate the original Stanford-dependency
@@ -156,11 +149,15 @@ public class ParseTree {
 
             //tdl1 = gs1.typedDependenciesCCprocessed();
             tdl1 = new ArrayList<TypedDependency>(gs1.typedDependencies());
-            //System.exit(1);
+            System.out.print(tdl1.size()+"\n");
+
+
             //GrammaticalStructureConversionUtils.printDependencies(gs1,tdl1,parsedTree,true,false,false);
             SemanticGraph semgraph = new SemanticGraph(tdl1);
+
             TreeBuilder tree = new TreeBuilder();
             tree.initTreeFromUD(semgraph,vectorizationType);
+
             String dotFormat = semgraph.toDotFormat();
             if (printDepGraph) {
                 GraphViz gv = new GraphViz();
@@ -179,9 +176,38 @@ public class ParseTree {
 
 
     public static void main(String[] argv) throws Exception{
-        String text = "It takes another hour to search for the Book of the Dead 's opposite number , which will theoretically send Imhotep back to the cosmic soup from which he sprang before he can transfer the heroine 's soul to the embalmed remains of his lady love .";
-        List<TreeBuilder> tree = extractDependencyTree(text,Enums.DependencyType.UDV1,true,"/Users/u6042446/Desktop/test",Enums.VectorizationType.WordIdentity);
-        System.out.print(tree.get(0).getTreeWidth());
+        /**
+        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream("/Users/u6042446/IdeaProjects/TreeKernels/data/ANC_written_sentenceperline_v4.txt")));
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("/Users/u6042446/IdeaProjects/TreeKernels/data/ANC_written_sentenceperline_v5.txt")));
+        String line;
+        while ((line=reader.readLine())!=null)
+        {
+            String[] records = line.split("\t");
+            String id = records[0];
+            String text = records[1];
+            if (sentenceTokanizerStatus(text)) continue;
+            writer.write(line+"\n");
+        }
+        writer.close();
+        reader.close();
+         **/
+
+        String text = "Washington , D.C. : December 1986 .";
+        text = "This paper demonstrates a novel algorithm";
+        //System.out.print(sentenceTokanizerStatus(text)+"\n");
+        //text = "teem of one 's countrymen -- as the services tout .";
+        //System.out.print(text.split(" ").length+"\n");
+        ParseTree parseTree = new ParseTree();
+        //List<TreeBuilder> treeConst = parseTree.extractConstituencyTree(text);
+
+        //System.out.print(treeConst);
+        List<TreeBuilder> tree = parseTree.extractDependencyTree(text,Enums.DependencyType.StandardStanford,true,"/Users/u6042446/Desktop/test",Enums.VectorizationType.WordIdentity);
+        tree =  parseTree.extractDependencyTree(text,Enums.DependencyType.StandardStanford,true,"/Users/u6042446/Desktop/test2",Enums.VectorizationType.StandardStanford);
+
+        //System.out.print(tree.get(0).treemap.get(2).getChildrens().get(1).getVector()+"\n");
+        //System.out.print(tree.get(0).getTreeDepth()+"\t"+tree.get(0).getTreeWidth()+"\n");
+        //tree = extractDependencyTree(text,Enums.DependencyType.StandardStanford,true,"/Users/u6042446/Desktop/test",Enums.VectorizationType.WordIdentity);
+        //System.out.print(treeConst.get(0).getTreeDepth()+"\t"+treeConst.get(0).getTreeWidth()+"\n");
         //List<Sentence> allText = sentenceTokanizer(text);
         //System.out.print(allText);
 

@@ -6,16 +6,19 @@ import java.util.*;
  */
 public class Sentence {
 
-    private String tokens;
+    private String sentenceText;
     private int sentLength;
+    private int sentenceId;
 
-    public Sentence(String tokens,int sentLength)
+    public Sentence(String sentenceText,int sentLength,int sentenceId)
     {
-        this.tokens = tokens;
+        this.sentenceText = sentenceText;
         this.sentLength = sentLength;
+        this.sentenceId = sentenceId;
     }
 
 
-    public String getTokens() {return (tokens);}
+    public String getSentenceText() {return (this.sentenceText);}
     public int getSentLength() {return (sentLength);}
+    public int getSentenceId() {return (sentenceId);}
 }

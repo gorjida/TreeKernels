@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import edu.stanford.nlp.io.IOUtils;
 import edu.stanford.nlp.ling.IndexedWord;
+import edu.stanford.nlp.math.DoubleAD;
 import edu.stanford.nlp.pipeline.CoreNLPProtos;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.trees.GrammaticalRelation;
@@ -22,6 +23,7 @@ public class TreeBuilder {
     public Map<Integer, TreeNode> treemap;
     private int treeWidth;
     private int treeDepth;
+    private boolean isValid;
 
     public TreeBuilder() {
         super();
@@ -30,6 +32,8 @@ public class TreeBuilder {
 
     public int getTreeDepth() {return (this.treeDepth);}
     public int getTreeWidth() {return  (this.treeWidth);}
+    public boolean getIsValid() {return (this.isValid);}
+
 
 
     public static String[] customSplit(String input,String delimitter) {
@@ -96,7 +100,7 @@ public class TreeBuilder {
             this.treemap.put(root.index(),node2);
         }
 
-        double treeWidth = 0;
+        double treeWidth = Double.NEGATIVE_INFINITY;
         double treeDepth = Double.NEGATIVE_INFINITY;
 
         while (!listOfNodes.isEmpty()) {
@@ -106,9 +110,10 @@ public class TreeBuilder {
             //Iterate over all the children
             //if (!graph.getChildren(currentNode).isEmpty() && node1.getDepth()!=-2) treeDepth+=1;
             if (node1.getDepth()>treeDepth) treeDepth = node1.getDepth();
-            if (graph.getChildren(currentNode).isEmpty()) treeWidth+=1;
+            if (graph.getChildren(currentNode).size()>treeWidth) treeWidth = graph.getChildren(currentNode).size();
+            //if (graph.getChildren(currentNode).isEmpty()) treeWidth+=1;
 
-            double tempWidth = 0;
+
             for (IndexedWord child: graph.getChildren(currentNode)) {
                 List<String> relations = new ArrayList<String>();//List of Grammatical relations
                 for (GrammaticalRelation rel: graph.relns(child)) relations.add(rel.toString());
@@ -117,7 +122,6 @@ public class TreeBuilder {
                node2.setParents(node1);
                listOfNodes.add(child);
                this.treemap.put(child.index(),node2);
-                tempWidth+=1;
                 node2.setDepth(node1.getDepth()+1);
             }
         }
@@ -135,6 +139,11 @@ public class TreeBuilder {
         this.treemap = new HashMap<Integer, TreeNode>();
         boolean hasRoot = false;
         boolean flag = false;
+
+        double treeWidth = Double.NEGATIVE_INFINITY;
+        double treeDepth = Double.NEGATIVE_INFINITY;
+
+        LinkedList<TreeNode> listOfNodes = new LinkedList<TreeNode>();
         for (String t : depens) {
             //System.out.print(t+"\n");
             //Process this string and extract gov and dep
@@ -185,11 +194,40 @@ public class TreeBuilder {
                 node2 = new TreeNode(depValue, depIndex, "NONE");
                 this.treemap.put(depIndex, node2);
             }
+            if (node1.getDepth()>treeDepth) treeDepth = node1.getDepth();
 
             node1.addChild(node2);
             node2.setParents(node1);
         }
+        listOfNodes.add(this.root);
 
+        //This is temporary
+        double maxNumChildren = Double.NEGATIVE_INFINITY;
+        while (!listOfNodes.isEmpty())
+        {
+            TreeNode curreNode = listOfNodes.pop();
+            List<TreeNode> children = curreNode.getChildrens();
+            //if (children.isEmpty()) treeWidth+=1;
+            if (children.size()>treeWidth) treeWidth = children.size();
+            if (curreNode.getDepth()>treeDepth) treeDepth = curreNode.getDepth();
+
+            if (children.size()>maxNumChildren) maxNumChildren = children.size();
+            for (TreeNode child: children)
+            {
+                child.setDepth(curreNode.getDepth()+1);
+                listOfNodes.add(child);
+            }
+        }
+
+
+        this.treeDepth = (int) (treeDepth-1);
+        this.treeWidth = (int) treeWidth;
+
+        if (maxNumChildren>5) {
+            isValid = false;
+        } else {
+            isValid = true;
+        }
         return (hasRoot);
     }
 
