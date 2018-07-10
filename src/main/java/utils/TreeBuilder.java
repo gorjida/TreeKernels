@@ -3,12 +3,12 @@ package utils;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
+//import java.util.stream.Collectors;
 
 import edu.stanford.nlp.io.IOUtils;
 import edu.stanford.nlp.ling.IndexedWord;
-import edu.stanford.nlp.math.DoubleAD;
-import edu.stanford.nlp.pipeline.CoreNLPProtos;
+//import edu.stanford.nlp.math.DoubleAD;
+//import edu.stanford.nlp.pipeline.CoreNLPProtos;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.trees.GrammaticalRelation;
 import edu.stanford.nlp.trees.GrammaticalStructure;

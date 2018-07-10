@@ -157,12 +157,12 @@ public class TreeNode implements Comparable<TreeNode> {
         Vector<Double> vectorRepresentation = new Vector<Double>();
 
         //new int[Enums.PartOfSpeech.getNumPosTags()+Enums.StanfordDependencyRelations.getNumRelationTags()];
-        if (vectorizationType==Enums.VectorizationType.StandardStanford)
+        int posTagIndex = Enums.PartOfSpeech.getPOSIndex(posTag);
+        int bias = Enums.PartOfSpeech.getNumPosTags();
+        Set<Integer> relationTagIndices = new HashSet<Integer>();
+        if (vectorizationType==Enums.VectorizationType.StandardStanford || vectorizationType==Enums.VectorizationType.HybridStanford)
         {
-            int posTagIndex = Enums.PartOfSpeech.getPOSIndex(posTag);
 
-            int bias = Enums.PartOfSpeech.getNumPosTags();
-            Set<Integer> relationTagIndices = new HashSet<Integer>();
             for (String relation: relationTag) {
                 int relationTagIndex = Enums.StanfordDependencyRelations.getRelationIndex(relation);
                 relationTagIndices.add(bias+relationTagIndex);
@@ -176,8 +176,20 @@ public class TreeNode implements Comparable<TreeNode> {
                     vectorRepresentation.add((double) 0);
                 }
             }
-        } else if (vectorizationType==Enums.VectorizationType.UDV1)
-        {
+
+        } else if (vectorizationType==Enums.VectorizationType.UDV1 || vectorizationType==Enums.VectorizationType.HybridUD){
+
+            for (String relation : relationTag) {
+                int relationTagIndex = Enums.UDDependencyRelations.getRelationIndex(relation);
+                relationTagIndices.add(bias + relationTagIndex);
+            }
+            for (int index = 0; index < Enums.PartOfSpeech.getNumPosTags() + Enums.UDDependencyRelations.getNumRelationTags(); index += 1) {
+                if (index == posTagIndex || relationTagIndices.contains(index)) {
+                    vectorRepresentation.add((double) 1);
+                } else {
+                    vectorRepresentation.add((double) 0);
+                }
+            }
             //Add vector initiation by UDV
         } else if (vectorizationType==Enums.VectorizationType.WordIdentity)
         {

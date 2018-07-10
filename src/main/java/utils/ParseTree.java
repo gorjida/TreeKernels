@@ -10,9 +10,7 @@ import it.uniroma2.sag.kelp.data.representation.tree.TreeRepresentation;
 import it.uniroma2.sag.kelp.data.representation.tree.node.*;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import edu.stanford.nlp.semgraph.SemanticGraph;
 //import edu.stanford.nlp.trees.GrammaticalStructureConversionUtils;
@@ -114,7 +112,7 @@ public class ParseTree {
 
         int counter = 0;
         for (List<HasWord> sentence: tokanizer) {
-            System.out.print(sentence+"\n");
+            //System.out.print(sentence+"\n");
             counter+=1;
         }
         if (counter>1) status = false;
@@ -149,7 +147,7 @@ public class ParseTree {
 
             //tdl1 = gs1.typedDependenciesCCprocessed();
             tdl1 = new ArrayList<TypedDependency>(gs1.typedDependencies());
-            System.out.print(tdl1.size()+"\n");
+            //System.out.print(tdl1.size()+"\n");
 
 
             //GrammaticalStructureConversionUtils.printDependencies(gs1,tdl1,parsedTree,true,false,false);
@@ -176,32 +174,56 @@ public class ParseTree {
 
 
     public static void main(String[] argv) throws Exception{
-        /**
+
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream("/Users/u6042446/IdeaProjects/TreeKernels/data/ANC_written_sentenceperline_v4.txt")));
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("/Users/u6042446/IdeaProjects/TreeKernels/data/ANC_written_sentenceperline_v5.txt")));
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("/Users/u6042446/IdeaProjects/TreeKernels/data/list_of_ud_labels.txt")));
         String line;
+        ParseTree parseTree = new ParseTree();
+        Set<String> labels = new HashSet<String>();
+        int counter = 0;
         while ((line=reader.readLine())!=null)
         {
+            counter+=1;
+            if (counter%1000==0) System.out.print(counter+"\n");
             String[] records = line.split("\t");
             String id = records[0];
             String text = records[1];
             if (sentenceTokanizerStatus(text)) continue;
-            writer.write(line+"\n");
+            List<TreeBuilder> tree = parseTree.extractDependencyTree(text,Enums.DependencyType.UDV1,false,"/Users/u6042446/Desktop/test",
+                    Enums.VectorizationType.WordIdentity);
+            for (Map.Entry<Integer,TreeNode> entry: tree.get(0).treemap.entrySet())
+            {
+                if (entry.getKey()<0) continue;
+                for (String rel: entry.getValue().getGrammaticalRelations())
+                {
+                    labels.add(rel);
+                }
+            }
+            //writer.write(line+"\n");
         }
+        for (String l: labels) writer.write(l+"\n");
         writer.close();
         reader.close();
-         **/
+        System.exit(1);
 
+        //ParseTree parseTree = new ParseTree();
         String text = "Washington , D.C. : December 1986 .";
-        text = "This paper demonstrates a novel algorithm";
+        text = "Hector is writing";
         //System.out.print(sentenceTokanizerStatus(text)+"\n");
         //text = "teem of one 's countrymen -- as the services tout .";
         //System.out.print(text.split(" ").length+"\n");
-        ParseTree parseTree = new ParseTree();
+
         //List<TreeBuilder> treeConst = parseTree.extractConstituencyTree(text);
 
         //System.out.print(treeConst);
-        List<TreeBuilder> tree = parseTree.extractDependencyTree(text,Enums.DependencyType.StandardStanford,true,"/Users/u6042446/Desktop/test",Enums.VectorizationType.WordIdentity);
+        List<TreeBuilder> tree = parseTree.extractDependencyTree(text,Enums.DependencyType.UDV1,false,"/Users/u6042446/Desktop/test",
+                Enums.VectorizationType.UDV1);
+
+        for (Map.Entry<Integer,TreeNode> entry: tree.get(0).treemap.entrySet())
+        {
+            System.out.print(entry.getValue().getGrammaticalRelations()+"\n");
+        }
+        System.exit(1);
         tree =  parseTree.extractDependencyTree(text,Enums.DependencyType.StandardStanford,true,"/Users/u6042446/Desktop/test2",Enums.VectorizationType.StandardStanford);
 
         //System.out.print(tree.get(0).treemap.get(2).getChildrens().get(1).getVector()+"\n");

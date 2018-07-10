@@ -23,7 +23,7 @@ public class Enums {
     }
     public enum VectorizationType
     {
-        StandardStanford,UDV1,WordIdentity,WordEmbedding;
+        StandardStanford,UDV1,WordIdentity,HybridStanford,HybridUD;
     }
 
     public enum DependencyType
@@ -222,6 +222,103 @@ public class Enums {
         public static int getRelationIndex(String value) {
             int index = 0;
             for( StanfordDependencyRelations v : values() ) {
+
+                if( value.equals( v.getTag() ) ) {
+                    return index;
+                }
+                index+=1;
+            }
+            throw new IllegalArgumentException( "Unknown part of speech: '" + value + "'." );
+        }
+
+        public static int getNumRelationTags() {
+            return (values().length);
+        }
+    }
+
+    public enum UDDependencyRelations {
+        FLAT("flat"),
+        CC("cc"),
+        LIST("list"),
+        CC_PRECONJ("cc:preconj"),
+        ORPHAN("orphan"),
+        NMOD_TMOD("nmod:tmod"),
+        CCOMP("ccomp"),
+        FLAT_FOREIGN("flat:foreign"),
+        NSUBJPASS("nsubjpass"),
+        CSUBJ("csubj"),
+        CONJ("conj"),
+        DOBJ("dobj"),
+        VOCATIVE("vocative"),
+        NSUBJ_PASS("nsubj:pass"),
+        NEG("neg"),
+        CSUBJPASS("csubjpass"),
+        MARK("mark"),
+        OBL_TMOD("obl:tmod"),
+        DISCOURSE("discourse"),
+        MWE("mwe"),
+        ADVCL("advcl"),
+        DISLOCATED("dislocated"),
+        AUX("aux"),
+        CSUBJ_PASS("csubj:pass"),
+        DET_PREDET("det:predet"),
+        PARATAXIS("parataxis"),
+        XCOMP("xcomp"),
+        NSUBJ("nsubj"),
+        NMOD_NPMOD("nmod:npmod"),
+        NUMMOD("nummod"),
+        ADVMOD("advmod"),
+        AUX_PASS("aux:pass"),
+        OBL_NPMOD("obl:npmod"),
+        PUNCT("punct"),
+        COMPOUND("compound"),
+        COMPOUND_PRT("compound:prt"),
+        NMOD_POSS("nmod:poss"),
+        GOESWITH("goeswith"),
+        CASE("case"),
+        COP("cop"),
+        OBL("obl"),
+        OBJ("obj"),
+        AUXPASS("auxpass"),
+        DEP("dep"),
+        APPOS("appos"),
+        DET("det"),
+        NMOD("nmod"),
+        AMOD("amod"),
+        ACL_RELCL("acl:relcl"),
+        IOBJ("iobj"),
+        EXPL("expl"),
+        FIXED("fixed"),
+        ROOT("root"),
+        REPARANDUM("reparandum"),
+        ACL("acl")
+        ;
+        private final String tag;
+        private UDDependencyRelations(String tag) {
+            this.tag = tag;
+        }
+
+        public String toString() {
+            return getTag();
+        }
+
+        protected String getTag() {
+            return this.tag;
+        }
+
+        public static UDDependencyRelations get(String value ) {
+            for( UDDependencyRelations v : values() ) {
+                if( value.equals( v.getTag() ) ) {
+                    return v;
+                }
+            }
+
+            throw new IllegalArgumentException( "Unknown part of speech: '" + value + "'." );
+        }
+
+        public static int getRelationIndex(String value) {
+            int index = 0;
+            for( UDDependencyRelations v : values() ) {
 
                 if( value.equals( v.getTag() ) ) {
                     return index;

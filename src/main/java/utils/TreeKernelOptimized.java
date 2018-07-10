@@ -292,19 +292,19 @@ public class TreeKernelOptimized {
 
     /**
      *
-     * @param text1
-     * @param text2
-     * @param type
-     * @param vectorizationType
-     * @param treeStat
-     * @param scorePruneThreshold
+     * @param text1 sentence1
+     * @param text2 sentence2
+     * @param type type of the parse-tree
+     * @param vectorizationType type of vector representation for each node in the tree
+     * @param treeStat an object that keeps tree statistics
+     * @param scorePruneThreshold threshold for similarity between each two nodes
      * @param nodeStatWeight
-     * @param decayFactor
+     * @param decayFactor decaying fator of the depth of the tree
      * @param widthFactor
      * @param isSelf
      * @throws Exception
      */
-    public double calculateBaseLineSimilarity(String text1,String text2,Enums.DependencyType type,
+    public BaseLineStats calculateBaseLineSimilarity(String text1,String text2,Enums.DependencyType type,
                                             Enums.VectorizationType vectorizationType,Enums.TreeStat treeStat,
                                             double scorePruneThreshold,double nodeStatWeight,double decayFactor,double widthFactor,boolean isSelf) throws Exception
     {
@@ -316,8 +316,6 @@ public class TreeKernelOptimized {
             //System.out.print("Enforcing Vectorization for Constituency Tree (we only support identity similarity)\n");
             vectorizationType = Enums.VectorizationType.WordIdentity;
             dependencyListTree1 = parseTree.extractConstituencyTree(text1);
-
-
             if (!isSelf)
             {
                 dependencyListTree2 = parseTree.extractConstituencyTree(text2);
@@ -341,7 +339,6 @@ public class TreeKernelOptimized {
         }
         long finishTime = System.currentTimeMillis();
         //System.out.print("Parsing time:"+(finishTime-currentTime)/1000+"\n");
-
         long init = System.currentTimeMillis();
 
         //For now, there is only one sentence, so get the first entry (fix this later)
@@ -357,36 +354,48 @@ public class TreeKernelOptimized {
 
         List<String> postagTree1 = new ArrayList<String>();
         List<String> relationsTree1 = new ArrayList<String>();
+        List<String> wordsTree1 = new ArrayList<String>();
 
         for (Map.Entry<Integer,utils.TreeNode> entry: tree1Nodes.entrySet())
         {
             if (entry.getKey()>0)
             {
-                postagTree1.add(entry.getValue().getTag());
-                for (String relation: entry.getValue().getGrammaticalRelations()) relationsTree1.add(relation);
+                String token = entry.getValue().getValue();
+                postagTree1.add(token+"_"+entry.getValue().getTag());
+                wordsTree1.add(token);
+                for (String relation: entry.getValue().getGrammaticalRelations()) relationsTree1.add(token+"_"+relation);
                 Vector<Double> nodeRepres = entry.getValue().getVector();
                 //System.out.print(nodeRepres);
                 vecTree1 = Operations.addVectors(nodeRepres,vecTree1);
             }
         }
 
-        System.out.print(postagTree1+"\n");
-        System.out.print(relationsTree1);
-        System.exit(1);
-
+        List<String> postagTree2 = new ArrayList<String>();
+        List<String> relationsTree2= new ArrayList<String>();
+        List<String> wordsTree2 = new ArrayList<String>();
         for (Map.Entry<Integer,utils.TreeNode> entry: tree2Nodes.entrySet())
         {
             if (entry.getKey()>0)
             {
+                String token = entry.getValue().getValue();
+                postagTree2.add(token+"_"+entry.getValue().getTag());
+                wordsTree2.add(token);
+                for (String relation: entry.getValue().getGrammaticalRelations()) relationsTree2.add(token+"_"+relation);
                 Vector<Double> nodeRepres = entry.getValue().getVector();
-                System.out.print(nodeRepres+"\n");
                 vecTree2 = Operations.addVectors(nodeRepres,vecTree2);
             }
         }
 
-       //Calculate cosine similarity
+       //Calculate cosine similarity based on the one-hot vector representation
         double sim = Operations.calculateCosineSimilarity(vecTree1,vecTree2);
-        return (sim);
+        //Calculate Jaccard similarity based on the extracted set of labels
+        float simWordSim = Operations.jaccard_similarity(new HashSet<String>(wordsTree1),new HashSet<String>(wordsTree2));
+        float simPostagSim = Operations.jaccard_similarity(new HashSet<String>(postagTree1),new HashSet<String>(postagTree2));
+        float simRelationSim = Operations.jaccard_similarity(new HashSet<String>(relationsTree1),new HashSet<String>(relationsTree2));
+        //Form baseline object
+        BaseLineStats baseLineStats = new BaseLineStats(sim,(double) simWordSim,(double) simPostagSim,(double) simRelationSim);
+
+        return (baseLineStats);
 
     }
 

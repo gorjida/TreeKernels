@@ -195,6 +195,8 @@ public class Operations {
         return ((setIntersect(set1,set2).size()*1f)/setUnion(set1,set2).size());
     }
 
+
+
     public static List<Float> stringToFloatList (String input,String delimitter) {
         List<Float> initList = new ArrayList<Float>();
         for (String x: input.split(delimitter)) {
@@ -314,6 +316,56 @@ public class Operations {
      */
     public static double calculateNodeSimilarity(utils.TreeNode leftNode,utils.TreeNode rightNode,Enums.VectorizationType vectorizationType)
     {
+        switch (vectorizationType)
+        {
+            case WordIdentity: {
+                if (leftNode.getValue().compareTo(rightNode.getValue())==0) {
+                    return (1);
+                } else {
+                    return (0);
+                }
+            }
+            case StandardStanford: {
+                Vector<Double> leftRepresentation = leftNode.getVector();
+                Vector<Double> rightRepresentation = rightNode.getVector();
+                //Calculate similarity
+                return (calculateCosineSimilarity(leftRepresentation,rightRepresentation));
+            }
+            case UDV1: {
+                Vector<Double> leftRepresentation = leftNode.getVector();
+                Vector<Double> rightRepresentation = rightNode.getVector();
+                //Calculate similarity
+                return (calculateCosineSimilarity(leftRepresentation,rightRepresentation));
+            }
+            case HybridStanford: {
+                double identity;
+                if (leftNode.getValue().compareTo(rightNode.getValue())==0) {
+                    identity = 1;
+                } else {
+                    identity = 0;
+                }
+                Vector<Double> leftRepresentation = leftNode.getVector();
+                Vector<Double> rightRepresentation = rightNode.getVector();
+                double vectorSimilarity = calculateCosineSimilarity(leftRepresentation,rightRepresentation);
+                //System.out.print(.5*vectorSimilarity+.5*identity+"\n");
+                return (.5*vectorSimilarity+.5*identity);
+            }
+            case HybridUD: {
+                double identity;
+                if (leftNode.getValue().compareTo(rightNode.getValue())==0) {
+                    identity = 1;
+                } else {
+                    identity = 0;
+                }
+                Vector<Double> leftRepresentation = leftNode.getVector();
+                Vector<Double> rightRepresentation = rightNode.getVector();
+                double vectorSimilarity = calculateCosineSimilarity(leftRepresentation,rightRepresentation);
+                return (.5*vectorSimilarity+.5*identity);
+            }
+            default: return (0);
+        }
+
+        /**
         if (vectorizationType==Enums.VectorizationType.WordIdentity) {
             if (leftNode.getValue().compareTo(rightNode.getValue())==0) {
                 return (1);
@@ -329,6 +381,7 @@ public class Operations {
         {
             return (0);
         }
+        **/
     }
 
     public static Vector<Double> addVectors(Vector<Double> vec1,Vector<Double> vec2)
