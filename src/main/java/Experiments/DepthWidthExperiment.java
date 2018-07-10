@@ -30,19 +30,22 @@ public class DepthWidthExperiment {
         String text = "It takes another hour to search for the Book of the Dead 's opposite number , which will theoretically send Imhotep back to the cosmic soup from which he sprang before he can transfer the heroine 's soul to the embalmed remains of his lady love .";
         text = "They 're self-conscious , postmodern comments on crudely sexualized violent films .";
 
-        text = "This paper proposes a new approach";
+        //text = "This paper proposes a new approach";
         String text2 = "This paper demonstrates a novel algorithm";
 
-        text = "I ate at restaurent";
-        text2 = "He was at restaurent";
-
+        text = "I ate food at restaurent";
+        text2 = "He was at restaurent yesterday";
         TreeKernelOptimized kernel = new TreeKernelOptimized();
-        SubsetTreeStats self = kernel.calculateSubsetKernelSimilarity(text,text,type,Enums.VectorizationType.StandardStanford,Enums.TreeStat.MEAN,.9,1,1,1,true);
-        SubsetTreeStats selff = kernel.calculateSubsetKernelSimilarity(text2,text2,type,Enums.VectorizationType.StandardStanford,Enums.TreeStat.MEAN,.9,1,1,1,true);
-        SubsetTreeStats intraa = kernel.calculateSubsetKernelSimilarity(text,text2,type,Enums.VectorizationType.StandardStanford,Enums.TreeStat.MEAN,.9,1,1,1,false);
+        double sim = kernel.calculateBaseLineSimilarity(text,text2,type,Enums.VectorizationType.StandardStanford,Enums.TreeStat.MEAN,.9,1,1,1,false);
+        System.out.print(sim);
+        System.exit(1);
+
+        SubsetTreeStats self = kernel.calculateSubsetKernelSimilarity(text,text,type,Enums.VectorizationType.WordIdentity,Enums.TreeStat.MEAN,.9,1,1,1,true);
+        SubsetTreeStats selff = kernel.calculateSubsetKernelSimilarity(text2,text2,type,Enums.VectorizationType.WordIdentity,Enums.TreeStat.MEAN,.9,1,1,1,true);
+        SubsetTreeStats intraa = kernel.calculateSubsetKernelSimilarity(text,text2,type,Enums.VectorizationType.WordIdentity,Enums.TreeStat.MEAN,.9,1,1,1,false);
         //System.out.print(self.getTotalNumSubsets()+"\n");
         //System.out.print(selff.getTotalNumSubsets()+"\n");
-        System.out.print(intraa.getTotalNumSubsets()+"\n");
+        //System.out.print(intraa.getTotalNumSubsets()+"\n");
         System.out.print(intraa.getTotalNumSubsets()/(Math.sqrt(self.getTotalNumSubsets()*selff.getTotalNumSubsets())));
         //System.exit(1);
     }

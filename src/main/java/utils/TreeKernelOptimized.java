@@ -290,14 +290,24 @@ public class TreeKernelOptimized {
     }
 
 
-
-
-
-    public SubsetTreeStats calculateSubsetKernelSimilarity(String text1,String text2,Enums.DependencyType type,
-                                                                  Enums.VectorizationType vectorizationType,Enums.TreeStat treeStat,
-                                                           double scorePruneThreshold,double nodeStatWeight,double decayFactor,double widthFactor,boolean isSelf) throws Exception{
-
-
+    /**
+     *
+     * @param text1
+     * @param text2
+     * @param type
+     * @param vectorizationType
+     * @param treeStat
+     * @param scorePruneThreshold
+     * @param nodeStatWeight
+     * @param decayFactor
+     * @param widthFactor
+     * @param isSelf
+     * @throws Exception
+     */
+    public double calculateBaseLineSimilarity(String text1,String text2,Enums.DependencyType type,
+                                            Enums.VectorizationType vectorizationType,Enums.TreeStat treeStat,
+                                            double scorePruneThreshold,double nodeStatWeight,double decayFactor,double widthFactor,boolean isSelf) throws Exception
+    {
         List<TreeBuilder> dependencyListTree1= new ArrayList<TreeBuilder>();
         List<TreeBuilder> dependencyListTree2 = new ArrayList<TreeBuilder>();
 
@@ -315,14 +325,6 @@ public class TreeKernelOptimized {
                 dependencyListTree2 = new ArrayList<TreeBuilder>(dependencyListTree1);
             }
 
-            //if (!dependencyListTree1.get(0).getIsValid() || !dependencyListTree2.get(0).getIsValid())
-            //{
-            //    return (new SubsetTreeStats(dependencyListTree1.get(0).getTreeDepth(),dependencyListTree1.get(0).getTreeWidth(),dependencyListTree1.get(0).getTreeDepth(),dependencyListTree1.get(0).getTreeWidth(),-1));
-            //}
-            //if ((dependencyListTree1.get(0).getTreeWidth()>10) || (dependencyListTree2.get(0).treemap.size()>50))
-            //{
-            //    return (-1);
-            //}
         } else if (type == Enums.DependencyType.StandardStanford || type == Enums.DependencyType.UDV1) {
 
             dependencyListTree1 = parseTree.extractDependencyTree(text1,type,false,"",vectorizationType);
@@ -346,6 +348,96 @@ public class TreeKernelOptimized {
         currentTime = System.currentTimeMillis();
         TreeBuilder depTree1 = dependencyListTree1.get(0);
         TreeBuilder depTree2= dependencyListTree2.get(0);
+        //Map of nodes within the tree
+        Map<Integer, utils.TreeNode> tree1Nodes = depTree1.treemap;
+        Map<Integer, utils.TreeNode> tree2Nodes = depTree2.treemap;
+        //Calculate vector representation using any of the representations
+        Vector<Double> vecTree1 = new Vector<Double>();
+        Vector<Double> vecTree2 = new Vector<Double>();
+
+        List<String> postagTree1 = new ArrayList<String>();
+        List<String> relationsTree1 = new ArrayList<String>();
+
+        for (Map.Entry<Integer,utils.TreeNode> entry: tree1Nodes.entrySet())
+        {
+            if (entry.getKey()>0)
+            {
+                postagTree1.add(entry.getValue().getTag());
+                for (String relation: entry.getValue().getGrammaticalRelations()) relationsTree1.add(relation);
+                Vector<Double> nodeRepres = entry.getValue().getVector();
+                //System.out.print(nodeRepres);
+                vecTree1 = Operations.addVectors(nodeRepres,vecTree1);
+            }
+        }
+
+        System.out.print(postagTree1+"\n");
+        System.out.print(relationsTree1);
+        System.exit(1);
+
+        for (Map.Entry<Integer,utils.TreeNode> entry: tree2Nodes.entrySet())
+        {
+            if (entry.getKey()>0)
+            {
+                Vector<Double> nodeRepres = entry.getValue().getVector();
+                System.out.print(nodeRepres+"\n");
+                vecTree2 = Operations.addVectors(nodeRepres,vecTree2);
+            }
+        }
+
+       //Calculate cosine similarity
+        double sim = Operations.calculateCosineSimilarity(vecTree1,vecTree2);
+        return (sim);
+
+    }
+
+    public SubsetTreeStats calculateSubsetKernelSimilarity(String text1,String text2,Enums.DependencyType type,
+                                                                  Enums.VectorizationType vectorizationType,Enums.TreeStat treeStat,
+                                                           double scorePruneThreshold,double nodeStatWeight,double decayFactor,double widthFactor,boolean isSelf) throws Exception{
+
+
+        List<TreeBuilder> dependencyListTree1= new ArrayList<TreeBuilder>();
+        List<TreeBuilder> dependencyListTree2 = new ArrayList<TreeBuilder>();
+
+        long currentTime = System.currentTimeMillis();
+        if (type==Enums.DependencyType.CONSTITUENCY) {
+            //System.out.print("Enforcing Vectorization for Constituency Tree (we only support identity similarity)\n");
+            vectorizationType = Enums.VectorizationType.WordIdentity;
+            dependencyListTree1 = parseTree.extractConstituencyTree(text1);
+
+
+            if (!isSelf)
+            {
+                dependencyListTree2 = parseTree.extractConstituencyTree(text2);
+            } else {
+                dependencyListTree2 = new ArrayList<TreeBuilder>(dependencyListTree1);
+            }
+
+        } else if (type == Enums.DependencyType.StandardStanford || type == Enums.DependencyType.UDV1) {
+
+            dependencyListTree1 = parseTree.extractDependencyTree(text1,type,false,"",vectorizationType);
+            //System.out.print(text1+"\n");
+            //System.out.print(dependencyListTree1.get(0).treemap.get(2).getChildrens().get(1).getValue()+"****\n");
+            if (!isSelf)
+            {
+                dependencyListTree2 = parseTree.extractDependencyTree(text2,type,false,"",vectorizationType);
+            } else
+            {
+                dependencyListTree2 = new ArrayList<TreeBuilder>(dependencyListTree1);
+            }
+
+        }
+        long finishTime = System.currentTimeMillis();
+        //System.out.print("Parsing time:"+(finishTime-currentTime)/1000+"\n");
+
+        long init = System.currentTimeMillis();
+
+        //For now, there is only one sentence, so get the first entry (fix this later)
+        currentTime = System.currentTimeMillis();
+        TreeBuilder depTree1 = dependencyListTree1.get(0);
+        TreeBuilder depTree2= dependencyListTree2.get(0);
+
+
+
         //Map of nodes within the tree
         Map<Integer, utils.TreeNode> tree1Nodes = depTree1.treemap;
         Map<Integer, utils.TreeNode> tree2Nodes = depTree2.treemap;
@@ -388,8 +480,6 @@ public class TreeKernelOptimized {
                 if (sim>0) soFarSimilarities.put(entry2.getKey(),sim);
             }
         }
-
-
         System.out.print(nodeSimilarity+"\n");
         //Loop over all the intra-nodes
         Map<String,Double> mapOfIntraSubsets = new HashMap<String, Double>();

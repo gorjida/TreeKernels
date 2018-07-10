@@ -331,6 +331,20 @@ public class Operations {
         }
     }
 
+    public static Vector<Double> addVectors(Vector<Double> vec1,Vector<Double> vec2)
+    {
+        if (vec1.isEmpty()) return (vec2);
+        if (vec2.isEmpty()) return (vec1);
+        Vector<Double> output = new Vector<Double>();
+        int index = 0;
+        for (double entry: vec1)
+        {
+            output.add(entry+vec2.get(index));
+            index+=1;
+        }
+        return (output);
+    }
+
 
 
 
