@@ -25,7 +25,9 @@ public class DepthWidthExperiment {
 
     public static String genHeader()
     {
-        String header = "Id\tSent1\tSent2\tSTANFORD_IDENTITY\tSTANFORD_SOFT\tSTANFORD_HYBRID\tUD_IDENTITY\tUD_SOFT\tUD_HYBRID\tCONST_IDENTITY\tSTANFORD_EMBED\tSTANFORD_HYBRID_EMBED\tUD_EMBED\tUD_HYBRID_EMBED\n";
+        String header = "Id\tSent1\tSent2\tSTANFORD_IDENTITY\tSTANFORD_SOFT\tSTANFORD_HYBRID\tUD_IDENTITY\tUD_SOFT" +
+                "\tUD_HYBRID\tCONST_IDENTITY\tSTANFORD_EMBED\tSTANFORD_HYBRID_EMBED\tUD_EMBED\tUD_HYBRID_EMBED\tBASE_VECTOR\tBASE_JACC_WORD\t" +
+                "BASE_JACC_POSTAG\tBASE_JACC_RELATION\n";
         return (header);
     }
     public static String runExperiment(String Id,String text1,String text2) throws Exception
@@ -44,10 +46,59 @@ public class DepthWidthExperiment {
         double sim = intraa.getTotalNumSubsets()/(Math.sqrt(self.getTotalNumSubsets()*selff.getTotalNumSubsets()));
         stats+= sim+"\t";
 
+        type = Enums.DependencyType.StandardStanford;
+        vecType = Enums.VectorizationType.StandardStanford;
+        self = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,true);
+        selff = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,true);
+        intraa = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,false);
+        sim = intraa.getTotalNumSubsets()/(Math.sqrt(self.getTotalNumSubsets()*selff.getTotalNumSubsets()));
+        stats+= sim+"\t";
 
+        type = Enums.DependencyType.StandardStanford;
+        vecType = Enums.VectorizationType.HybridStanford;
+        self = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,true);
+        selff = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,true);
+        intraa = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,false);
+        sim = intraa.getTotalNumSubsets()/(Math.sqrt(self.getTotalNumSubsets()*selff.getTotalNumSubsets()));
+        stats+= sim+"\t";
 
-        //
         type = Enums.DependencyType.UDV1;
+        vecType = Enums.VectorizationType.WordIdentity;
+        self = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,true);
+        selff = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,true);
+        intraa = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,false);
+        sim = intraa.getTotalNumSubsets()/(Math.sqrt(self.getTotalNumSubsets()*selff.getTotalNumSubsets()));
+        stats+= sim+"\t";
+
+        type = Enums.DependencyType.UDV1;
+        vecType = Enums.VectorizationType.UDV1;
+        self = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,true);
+        selff = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,true);
+        intraa = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,false);
+        sim = intraa.getTotalNumSubsets()/(Math.sqrt(self.getTotalNumSubsets()*selff.getTotalNumSubsets()));
+        stats+= sim+"\t";
+
+        type = Enums.DependencyType.UDV1;
+        vecType = Enums.VectorizationType.HybridUD;
+        self = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,true);
+        selff = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,true);
+        intraa = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,false);
+        sim = intraa.getTotalNumSubsets()/(Math.sqrt(self.getTotalNumSubsets()*selff.getTotalNumSubsets()));
+        stats+= sim+"\t";
+
+        type = Enums.DependencyType.CONSTITUENCY;
+        vecType = Enums.VectorizationType.WordIdentity;
+        self = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,true);
+        selff = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,true);
+        intraa = kernel.calculateSubsetKernelSimilarity(text1,text2,type,vecType,Enums.TreeStat.MEAN,.2,1,1,1,false);
+        sim = intraa.getTotalNumSubsets()/(Math.sqrt(self.getTotalNumSubsets()*selff.getTotalNumSubsets()));
+        stats+= sim+"\t";
+
+        //Embeddings
+        stats+= "\t\t\t\t";
+
+        //BaseLines
+        //
         return (stats);
     }
 
