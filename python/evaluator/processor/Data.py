@@ -7,6 +7,7 @@ from sklearn.preprocessing import scale
 import csv
 from conf.Conf import Conf
 from sklearn.preprocessing import MinMaxScaler
+import random
 
 from conf import Conf
 
@@ -20,12 +21,12 @@ class Data:
         scaler = MinMaxScaler()
         full_data_frame = pd.read_csv(self._conf._base_path + "/" + self._conf._feature_file_name , sep="\t",quoting=csv.QUOTE_ALL)
         self.full_data_frame = full_data_frame.dropna() #drop all the NANs
-        self.full_data_frame[self._conf._list_of_feature_names] = scaler.fit_transform(self.full_data_frame[self._conf._list_of_feature_names])
+        self.full_data_frame[self._conf._list_of_all_feature_names] = scaler.fit_transform(self.full_data_frame[self._conf._list_of_all_feature_names])
         self.full_data_frame["label_numerical"] = self.full_data_frame['Label'].map(lambda rec: rec)
         #feature_df = data[conf._list_of_feature_names]
 
     def shuffle_data_frame(self):
-        self.full_data_frame.reindex(np.random.permutation(self.full_data_frame.index))
+        self.full_data_frame = self.full_data_frame.reindex(np.random.permutation(self.full_data_frame.index))
 
     def n_fold_validation(self,train_df,n_fold):
         """
@@ -33,8 +34,9 @@ class Data:
         :param n_fold:
         :return:
         """
-        self.shuffle_data_frame() #shuffle wholde dataframe
-        all_indexes = train_df.index
+        #self.shuffle_data_frame() #shuffle wholde dataframe
+        all_indexes = list(train_df.index)
+        random.shuffle(all_indexes)
         fold_indexes = np.array_split(all_indexes,n_fold)#generate different folds
         fold_train_df = []
         for x in fold_indexes:
